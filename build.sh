@@ -149,7 +149,7 @@ writeBjamUserConfig()
     cat >> $BOOST_SRC/tools/build/v2/user-config.jam <<EOF
 
 using clang : ios
-   : xcrun --sdk iphoneos $COMPILER -miphoneos-version-min=6.1 -arch armv7 -arch arm64 $EXTRA_CPPFLAGS
+   : xcrun --sdk iphoneos $COMPILER -miphoneos-version-min=6.1 -arch arm -arch arm64 $EXTRA_CPPFLAGS
    : <striper>
    ;
 using clang : ios_sim
@@ -166,7 +166,7 @@ writeBjamUserConfig158()
     cat >> $BOOST_SRC/tools/build/src/user-config.jam <<EOF
 
 using clang : ios
-   : xcrun --sdk iphoneos $COMPILER -miphoneos-version-min=6.1 -arch armv7 -arch arm64 $EXTRA_CPPFLAGS
+   : xcrun --sdk iphoneos $COMPILER -miphoneos-version-min=6.1 -arch arm -arch arm64 $EXTRA_CPPFLAGS
    : <striper>
    ;
 using clang : ios_sim
@@ -242,7 +242,7 @@ createFatLibraries()
 # 
 createThinLibraries()
 {
-    for arch in armv7 arm64 i386 ; do
+    for arch in arm arm64 i386 ; do
 	rm -rf $BUILDDIR/$arch
 	mkdir $BUILDDIR/$arch
 	echo -n "Creating $arch thin libraries... "
@@ -258,7 +258,7 @@ createThinLibraries()
 
 createThinLibraries158()
 {
-    for arch in armv7 arm64 i386 x86_64 ; do
+    for arch in arm arm64 i386 x86_64 ; do
 	rm -rf $BUILDDIR/$arch
 	mkdir $BUILDDIR/$arch
 	echo -n "Creating $arch thin libraries... "
@@ -279,7 +279,7 @@ createThinLibraries158()
 #
 extractAndRenameObjects()
 {
-    for arch in armv7 arm64 i386 ; do
+    for arch in arm arm64 i386 ; do
 	rm -rf $BUILDDIR/$arch/obj
 	mkdir $BUILDDIR/$arch/obj
 	echo -n "Unpacking $arch thin libraries... "
@@ -302,7 +302,7 @@ extractAndRenameObjects()
 
 extractAndRenameObjects158()
 {
-    for arch in armv7 arm64 i386 x86_64 ; do
+    for arch in arm arm64 i386 x86_64 ; do
 	rm -rf $BUILDDIR/$arch/obj
 	mkdir $BUILDDIR/$arch/obj
 	echo -n "Unpacking $arch thin libraries... "
@@ -330,7 +330,7 @@ extractAndRenameObjects158()
 createThinLibBoostForEachArch()
 {
     echo -n "Creating libboost.a... "
-    for arch in armv7 arm64 i386 ; do
+    for arch in arm arm64 i386 ; do
 	rm -f $BUILDDIR/$arch/libbboost.a
 	echo -n "$arch "
 	(
@@ -350,7 +350,7 @@ createThinLibBoostForEachArch()
 createThinLibBoostForEachArch158()
 {
     echo -n "Creating libboost.a... "
-    for arch in armv7 arm64 i386 x86_64 ; do
+    for arch in arm arm64 i386 x86_64 ; do
 	rm -f $BUILDDIR/$arch/libbboost.a
 	echo -n "$arch "
 	(
@@ -376,7 +376,7 @@ createUniversalLibBoost()
     echo "Creating Universal libboost.a library..."
     xcrun -sdk iphoneos lipo \
         -create \
-        -arch armv7  "$BUILDDIR/armv7/libboost.a" \
+        -arch arm  "$BUILDDIR/arm/libboost.a" \
         -arch arm64  "$BUILDDIR/arm64/libboost.a" \
         -arch i386   "$BUILDDIR/i386/libboost.a" \
         -o           "$BUILDDIR/libboost.a" \
@@ -392,7 +392,7 @@ createUniversalLibBoost158()
     echo "Creating Universal libboost.a library..."
     xcrun -sdk iphoneos lipo \
         -create \
-        -arch armv7  "$BUILDDIR/armv7/libboost.a" \
+        -arch arm  "$BUILDDIR/arm/libboost.a" \
         -arch arm64  "$BUILDDIR/arm64/libboost.a" \
         -arch i386   "$BUILDDIR/i386/libboost.a" \
         -arch x86_64 "$BUILDDIR/x86_64/libboost.a" \
@@ -461,6 +461,19 @@ EOF
     doneSection
 }
 
+patchBoost()
+{
+    echo "Patching boost source version $BOOST_VERSION ..."
+
+    [ -d patches/$BOOST_VERSION ] || return
+
+    for p in patches/$BOOST_VERSION/* ; do
+	if [ -f $p ] ; then
+	    patch -d $BOOST_SRC -p1 < $p
+	fi
+    done
+}
+
 #===============================================================================
 # Execution starts here
 #===============================================================================
@@ -473,20 +486,7 @@ case $BOOST_VERSION in
         cleanEverything
 	fetchSource
         unpackSource
-	patch -d $BOOST_SRC -p1 < floating_point_comparison_hpp_1_53_0.patch
-	patch -d $BOOST_SRC -p1 < cas64strong_hpp_1_53_0.patch
-	patch -d $BOOST_SRC -p1 < duration_hpp_1_53_0.patch
-	patch -d $BOOST_SRC -p1 < posix_time_duration_hpp_1_53_0.patch
-	patch -d $BOOST_SRC -p1 < gregorian_calendar_ipp_1_53_0.patch
-	patch -d $BOOST_SRC -p1 < future_hpp_1_53_0.patch
-	patch -d $BOOST_SRC -p1 < posix_time_conversion_hpp_1_53_0.patch
-	patch -d $BOOST_SRC -p1 < xtime_hpp_1_53_0.patch
-	patch -d $BOOST_SRC -p1 < time_system_counted_hpp_1_53_0.patch
-	patch -d $BOOST_SRC -p1 < date_hpp_1_53_0.patch
-	patch -d $BOOST_SRC -p1 < int_adapter_hpp_1_53_0.patch
-	patch -d $BOOST_SRC -p1 < plain_report_formatter_ipp_1_53_0.patch
-	patch -d $BOOST_SRC -p1 < unit_test_suite_impl_hpp_1_53_0.patch
-	patch -d $BOOST_SRC -p1 < unit_test_suite_ipp_1_53_0.patch
+	patchBoost
         writeBjamUserConfig
         bootstrapBoost
         buildBoostForiPhoneOS
@@ -502,18 +502,7 @@ case $BOOST_VERSION in
         cleanEverything
 	fetchSource
         unpackSource
-	patch -d $BOOST_SRC -p1 < posix_time_duration_hpp_1_55_0.patch
-	patch -d $BOOST_SRC -p1 < gregorian_calendar_ipp_1_55_0.patch
-	patch -d $BOOST_SRC -p1 < posix_time_conversion_hpp_1_55_0.patch
-	patch -d $BOOST_SRC -p1 < xtime_hpp_1_55_0.patch
-	patch -d $BOOST_SRC -p1 < time_system_counted_hpp_1_55_0.patch
-	patch -d $BOOST_SRC -p1 < date_hpp_1_55_0.patch
-	patch -d $BOOST_SRC -p1 < int_adapter_hpp_1_55_0.patch
-	patch -d $BOOST_SRC -p1 < plain_report_formatter_ipp_1_55_0.patch
-	patch -d $BOOST_SRC -p1 < unit_test_suite_impl_hpp_1_55_0.patch
-	patch -d $BOOST_SRC -p1 < unit_test_suite_ipp_1_55_0.patch
-	patch -d $BOOST_SRC -p1 < future_hpp_1_55_0.patch
-	patch -d $BOOST_SRC -p1 < clang-darwin_jam_1_55_0.patch
+	patchBoost
         writeBjamUserConfig
         bootstrapBoost
         buildBoostForiPhoneOS
@@ -529,18 +518,7 @@ case $BOOST_VERSION in
         cleanEverything
 	fetchSource
         unpackSource
-	patch -d $BOOST_SRC -p1 < posix_time_duration_hpp_1_58_0.patch
-	patch -d $BOOST_SRC -p1 < gregorian_calendar_ipp_1_58_0.patch
-	patch -d $BOOST_SRC -p1 < xtime_hpp_1_58_0.patch
-	patch -d $BOOST_SRC -p1 < time_system_counted_hpp_1_58_0.patch
-	patch -d $BOOST_SRC -p1 < date_hpp_1_58_0.patch
-	patch -d $BOOST_SRC -p1 < int_adapter_hpp_1_58_0.patch
-	patch -d $BOOST_SRC -p1 < plain_report_formatter_ipp_1_58_0.patch
-	patch -d $BOOST_SRC -p1 < unit_test_suite_impl_hpp_1_58_0.patch
-	patch -d $BOOST_SRC -p1 < unit_test_suite_ipp_1_58_0.patch
-	patch -d $BOOST_SRC -p1 < clang-darwin_jam_1_58_0.patch
-	patch -d $BOOST_SRC -p1 < conversion_hpp_1_58_0.patch
-	patch -d $BOOST_SRC -p1 < dst_rules_hpp_1_58_0.patch
+	patchBoost
         writeBjamUserConfig158
         bootstrapBoost
         buildBoostForiPhoneOS
