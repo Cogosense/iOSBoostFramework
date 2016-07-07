@@ -149,7 +149,7 @@ writeBjamUserConfig()
     cat >> $BOOST_SRC/tools/build/v2/user-config.jam <<EOF
 
 using clang : ios
-   : xcrun --sdk iphoneos $COMPILER -miphoneos-version-min=6.1 -arch arm -arch arm64 $EXTRA_CPPFLAGS
+   : xcrun --sdk iphoneos $COMPILER -miphoneos-version-min=6.1 -arch armv7 -arch arm64 $EXTRA_CPPFLAGS
    : <striper>
    ;
 using clang : ios_sim
@@ -166,7 +166,7 @@ writeBjamUserConfig158()
     cat >> $BOOST_SRC/tools/build/src/user-config.jam <<EOF
 
 using clang : ios
-   : xcrun --sdk iphoneos $COMPILER -miphoneos-version-min=6.1 -arch arm -arch arm64 $EXTRA_CPPFLAGS
+   : xcrun --sdk iphoneos $COMPILER -miphoneos-version-min=6.1 -arch armv7 -arch arm64 $EXTRA_CPPFLAGS
    : <striper>
    ;
 using clang : ios_sim
@@ -242,7 +242,7 @@ createFatLibraries()
 # 
 createThinLibraries()
 {
-    for arch in arm arm64 i386 ; do
+    for arch in armv7 arm64 i386 ; do
 	rm -rf $BUILDDIR/$arch
 	mkdir $BUILDDIR/$arch
 	echo -n "Creating $arch thin libraries... "
@@ -258,7 +258,7 @@ createThinLibraries()
 
 createThinLibraries158()
 {
-    for arch in arm arm64 i386 x86_64 ; do
+    for arch in armv7 arm64 i386 x86_64 ; do
 	rm -rf $BUILDDIR/$arch
 	mkdir $BUILDDIR/$arch
 	echo -n "Creating $arch thin libraries... "
@@ -279,7 +279,7 @@ createThinLibraries158()
 #
 extractAndRenameObjects()
 {
-    for arch in arm arm64 i386 ; do
+    for arch in armv7 arm64 i386 ; do
 	rm -rf $BUILDDIR/$arch/obj
 	mkdir $BUILDDIR/$arch/obj
 	echo -n "Unpacking $arch thin libraries... "
@@ -302,7 +302,7 @@ extractAndRenameObjects()
 
 extractAndRenameObjects158()
 {
-    for arch in arm arm64 i386 x86_64 ; do
+    for arch in armv7 arm64 i386 x86_64 ; do
 	rm -rf $BUILDDIR/$arch/obj
 	mkdir $BUILDDIR/$arch/obj
 	echo -n "Unpacking $arch thin libraries... "
@@ -330,7 +330,7 @@ extractAndRenameObjects158()
 createThinLibBoostForEachArch()
 {
     echo -n "Creating libboost.a... "
-    for arch in arm arm64 i386 ; do
+    for arch in armv7 arm64 i386 ; do
 	rm -f $BUILDDIR/$arch/libbboost.a
 	echo -n "$arch "
 	(
@@ -350,7 +350,7 @@ createThinLibBoostForEachArch()
 createThinLibBoostForEachArch158()
 {
     echo -n "Creating libboost.a... "
-    for arch in arm arm64 i386 x86_64 ; do
+    for arch in armv7 arm64 i386 x86_64 ; do
 	rm -f $BUILDDIR/$arch/libbboost.a
 	echo -n "$arch "
 	(
@@ -376,7 +376,7 @@ createUniversalLibBoost()
     echo "Creating Universal libboost.a library..."
     xcrun -sdk iphoneos lipo \
         -create \
-        -arch arm  "$BUILDDIR/arm/libboost.a" \
+        -arch armv7  "$BUILDDIR/armv7/libboost.a" \
         -arch arm64  "$BUILDDIR/arm64/libboost.a" \
         -arch i386   "$BUILDDIR/i386/libboost.a" \
         -o           "$BUILDDIR/libboost.a" \
@@ -392,7 +392,7 @@ createUniversalLibBoost158()
     echo "Creating Universal libboost.a library..."
     xcrun -sdk iphoneos lipo \
         -create \
-        -arch arm  "$BUILDDIR/arm/libboost.a" \
+        -arch armv7  "$BUILDDIR/armv7/libboost.a" \
         -arch arm64  "$BUILDDIR/arm64/libboost.a" \
         -arch i386   "$BUILDDIR/i386/libboost.a" \
         -arch x86_64 "$BUILDDIR/x86_64/libboost.a" \
