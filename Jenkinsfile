@@ -56,8 +56,6 @@ node('osx && ios') {
 		    from: 'support@cogosense.com'
 	}
 
-	stash name: 'Makefile', includes: 'Makefile'
-
 	stage 'Build'
 	sh 'build.sh'
 
