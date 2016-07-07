@@ -1,0 +1,11 @@
+--- boost_1_58_0/boost/test/unit_test_suite_impl.hpp	2012-12-13 13:32:58.000000000 -0800
++++ boost_1_58_0.patched/boost/test/unit_test_suite_impl.hpp	2015-06-11 19:52:31.000000000 -0700
+@@ -74,7 +74,7 @@
+     readwrite_property<counter_t>       p_expected_failures;    // number of expected failures in this test unit
+     mutable readwrite_property<bool>    p_enabled;              // enabled status for this unit
+ 
+-    void                                increase_exp_fail( unsigned num );
++    void                                increase_exp_fail( counter_t num );
+ 
+ protected:
+     ~test_unit();

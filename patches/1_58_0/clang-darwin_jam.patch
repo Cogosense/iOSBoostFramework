@@ -1,0 +1,11 @@
+--- boost_1_58_0/tools/build/src/tools/clang-darwin.jam	2015-04-04 10:25:07.000000000 -0700
++++ boost_1_58_0.patched/tools/build/src/tools/clang-darwin.jam	2015-06-11 17:02:27.000000000 -0700
+@@ -83,7 +83,7 @@
+ 
+ toolset.flags clang-darwin.compile OPTIONS <inlining>off  : -fno-inline ;
+ toolset.flags clang-darwin.compile OPTIONS <inlining>on   : -Wno-inline ;
+-toolset.flags clang-darwin.compile OPTIONS <inlining>full : -finline-functions -Wno-inline ;
++toolset.flags clang-darwin.compile OPTIONS <inlining>full : -Wno-inline ;
+ 
+ toolset.flags clang-darwin.compile OPTIONS <warnings>off : -w ;
+ toolset.flags clang-darwin.compile OPTIONS <warnings>on  : -Wall ;

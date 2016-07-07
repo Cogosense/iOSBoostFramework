@@ -1,0 +1,17 @@
+--- boost_1_53_0/boost/date_time/int_adapter.hpp	2008-11-12 11:37:53.000000000 -0800
++++ boost_1_53_0.patched/boost/date_time/int_adapter.hpp	2014-03-12 14:04:46.000000000 -0700
+@@ -246,7 +246,14 @@
+         return *this;
+       }
+     }
++#ifdef __clang__
++#pragma clang diagnostic push
++#pragma clang diagnostic ignored "-Wconversion"
++#endif
+     return int_adapter<int_type>(value_ + rhs);
++#ifdef __clang__
++#pragma clang diagnostic pop
++#endif
+   }
+   
+   /*! Operator allows for subtracting dissimilar int_adapter types.

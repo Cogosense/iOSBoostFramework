@@ -1,0 +1,45 @@
+--- boost_1_58_0/boost/date_time/dst_rules.hpp	2015-03-03 14:19:01.000000000 -0800
++++ boost_1_58_0.patched/boost/date_time/dst_rules.hpp	2015-06-11 22:54:05.000000000 -0700
+@@ -47,13 +47,13 @@
+       static time_is_dst_result 
+       process_local_dst_start_day(const time_duration_type& time_of_day,
+                                   unsigned int dst_start_offset_minutes,
+-                                  long dst_length_minutes)
++                                  int dst_length_minutes)
+       {
+         //std::cout << "here" << std::endl;
+         if (time_of_day < time_duration_type(0,dst_start_offset_minutes,0)) {
+           return is_not_in_dst;
+         }
+-        long offset = dst_start_offset_minutes + dst_length_minutes;
++        int offset = dst_start_offset_minutes + dst_length_minutes;
+         if (time_of_day >= time_duration_type(0,offset,0)) {
+           return is_in_dst;
+         }
+@@ -72,7 +72,7 @@
+       static time_is_dst_result 
+       process_local_dst_end_day(const time_duration_type& time_of_day,
+                                 unsigned int dst_end_offset_minutes,
+-                                long dst_length_minutes)
++                                int dst_length_minutes)
+       {
+         //in US this will be 60 so offset in day is 1,0,0
+         int offset = dst_end_offset_minutes-dst_length_minutes;
+@@ -110,7 +110,7 @@
+           dst_start_offset.hours() * 60 + dst_start_offset.minutes();
+         unsigned int end_minutes = 
+           dst_end_offset.hours() * 60 + dst_end_offset.minutes();
+-        long length_minutes =  
++        unsigned int length_minutes =  
+           dst_length_minutes.hours() * 60 + dst_length_minutes.minutes();
+ 
+         return local_is_dst(current_day, time_of_day,
+@@ -140,7 +140,7 @@
+                    unsigned int dst_start_offset_minutes,
+                    const date_type& dst_end_day,
+                    unsigned int dst_end_offset_minutes,
+-                   long dst_length_minutes)
++                   int dst_length_minutes)
+       {
+         //in northern hemisphere dst is in the middle of the year
+         if (dst_start_day < dst_end_day) {

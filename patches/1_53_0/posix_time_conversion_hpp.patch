@@ -1,0 +1,11 @@
+--- boost_1_53_0/boost/date_time/posix_time/conversion.hpp	2014-03-12 12:38:00.000000000 -0700
++++ boost_1_53_0.patched/boost/date_time/posix_time/conversion.hpp	2014-03-12 12:38:21.000000000 -0700
+@@ -27,7 +27,7 @@
+   ptime from_time_t(std::time_t t)
+   {
+     ptime start(gregorian::date(1970,1,1));
+-    return start + seconds(static_cast<long>(t));
++    return start + seconds(static_cast<seconds::sec_type>(t));
+   }
+ 
+   //! Convert a time to a tm structure truncating any fractional seconds

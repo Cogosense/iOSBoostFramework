@@ -1,0 +1,20 @@
+--- boost_1_53_0/boost/date_time/time_system_counted.hpp	2008-02-27 12:00:24.000000000 -0800
++++ boost_1_53_0.patched/boost/date_time/time_system_counted.hpp	2014-03-12 13:13:40.000000000 -0700
+@@ -61,7 +61,7 @@
+       }
+     }
+     //int_type day_count() const
+-    unsigned long day_count() const
++    typename calendar_type::date_int_type day_count() const
+     {
+       /* resolution_traits::as_number returns a boost::int64_t & 
+        * frac_sec_per_day is also a boost::int64_t so, naturally, 
+@@ -75,7 +75,7 @@
+        * The division operation will then return a value of 106751991 - 
+        * easily fitting in an unsigned long. 
+        */
+-      return static_cast<unsigned long>(resolution_traits::as_number(time_count_) / frac_sec_per_day());
++      return static_cast<typename calendar_type::date_int_type>(resolution_traits::as_number(time_count_) / frac_sec_per_day());
+     }
+     int_type time_count() const
+     {

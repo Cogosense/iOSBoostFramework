@@ -1,0 +1,56 @@
+--- boost_1_51_0/boost/test/floating_point_comparison.hpp	2009-11-28 01:19:18.000000000 -0800
++++ boost_1_51_0.patched/boost/test/floating_point_comparison.hpp	2013-06-09 23:11:33.000000000 -0700
+@@ -247,10 +247,26 @@
+     }
+ };
+ 
++/*
++ * clang generates unused variable warnings for:
++ * floating_point_comparison.hpp:251:25: Unused variable 'check_is_close'
++ * floating_point_comparison.hpp:273:25: Unused variable 'check_is_small'
++ *
++ * This is the workaround
++ */
++#ifdef __clang__
++#pragma clang diagnostic push
++#pragma clang diagnostic ignored "-Wunused-variable"
++#endif
++
+ namespace {
+ check_is_close_t const& check_is_close = unit_test::ut_detail::static_constant<check_is_close_t>::value;
+ }
+ 
++#ifdef __clang__
++#pragma clang diagnostic pop
++#endif
++
+ //____________________________________________________________________________//
+ 
+ // ************************************************************************** //
+@@ -269,10 +285,26 @@
+     }
+ };
+ 
++/*
++ * clang generates unused variable warnings for:
++ * floating_point_comparison.hpp:251:25: Unused variable 'check_is_close'
++ * floating_point_comparison.hpp:273:25: Unused variable 'check_is_small'
++ *
++ * This is the workaround
++ */
++#ifdef __clang__
++#pragma clang diagnostic push
++#pragma clang diagnostic ignored "-Wunused-variable"
++#endif
++
+ namespace {
+ check_is_small_t const& check_is_small = unit_test::ut_detail::static_constant<check_is_small_t>::value;
+ }
+ 
++#ifdef __clang__
++#pragma clang diagnostic pop
++#endif
++
+ //____________________________________________________________________________//
+ 
+ } // namespace test_tools

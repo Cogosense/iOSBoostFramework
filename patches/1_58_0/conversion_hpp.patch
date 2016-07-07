@@ -1,0 +1,11 @@
+--- boost_1_58_0/boost/date_time/posix_time/conversion.hpp	2015-03-03 14:19:01.000000000 -0800
++++ boost_1_58_0.patched/boost/date_time/posix_time/conversion.hpp	2015-06-11 21:57:03.000000000 -0700
+@@ -27,7 +27,7 @@
+   ptime from_time_t(std::time_t t)
+   {
+     ptime start(gregorian::date(1970,1,1));
+-    return start + seconds(static_cast<long>(t));
++    return start + seconds(static_cast<posix_time::seconds::sec_type>(t));
+   }
+ 
+   //! Function that converts a ptime into a time_t

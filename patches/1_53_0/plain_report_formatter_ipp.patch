@@ -1,0 +1,20 @@
+--- boost_1_53_0/boost/test/impl/plain_report_formatter.ipp	2008-10-13 01:20:26.000000000 -0700
++++ boost_1_53_0.patched/boost/test/impl/plain_report_formatter.ipp	2014-03-12 14:15:44.000000000 -0700
+@@ -62,7 +62,7 @@
+                   const_string name, const_string res )
+ {
+     if( v > 0 ) {
+-        ostr << std::setw( indent ) << ""
++        ostr << std::setw( (int)indent ) << ""
+              << v << ' ' << name << ( v != 1 ? "s" : "" );
+         if( total > 0 )
+             ostr << " out of " << total;
+@@ -112,7 +112,7 @@
+     else
+         descr = "failed";
+ 
+-    ostr << std::setw( m_indent ) << ""
++    ostr << std::setw( (int)m_indent ) << ""
+          << "Test " << (tu.p_type == tut_case ? "case " : "suite " ) << quote() << tu.p_name << ' ' << descr;
+ 
+     if( tr.p_skipped ) {

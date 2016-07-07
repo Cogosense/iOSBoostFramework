@@ -1,0 +1,11 @@
+--- boost_1_58_0/boost/test/impl/unit_test_suite.ipp	2012-12-13 13:32:58.000000000 -0800
++++ boost_1_58_0.patched/boost/test/impl/unit_test_suite.ipp	2015-06-11 19:52:41.000000000 -0700
+@@ -89,7 +89,7 @@
+ //____________________________________________________________________________//
+ 
+ void
+-test_unit::increase_exp_fail( unsigned num )
++test_unit::increase_exp_fail( counter_t num )
+ {
+     p_expected_failures.value += num;
+ 

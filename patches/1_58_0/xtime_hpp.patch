@@ -1,0 +1,11 @@
+--- boost_1_58_0/boost/thread/xtime.hpp	2015-03-21 07:44:02.000000000 -0700
++++ boost_1_58_0.patched/boost/thread/xtime.hpp	2015-06-11 21:53:45.000000000 -0700
+@@ -47,7 +47,7 @@
+     operator system_time() const
+     {
+         return boost::posix_time::from_time_t(0)+
+-            boost::posix_time::seconds(static_cast<long>(sec))+
++            boost::posix_time::seconds(static_cast<boost::posix_time::seconds::sec_type>(sec))+
+ #ifdef BOOST_DATE_TIME_HAS_NANOSECONDS
+             boost::posix_time::nanoseconds(nsec);
+ #else

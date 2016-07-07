@@ -1,0 +1,26 @@
+--- boost_1_58_0/boost/date_time/gregorian_calendar.ipp	2015-03-03 14:19:01.000000000 -0800
++++ boost_1_58_0.patched/boost/date_time/gregorian_calendar.ipp	2015-06-11 19:22:10.000000000 -0700
+@@ -38,10 +38,10 @@
+   BOOST_DATE_TIME_INLINE
+   int
+   gregorian_calendar_base<ymd_type_,date_int_type_>::week_number(const ymd_type& ymd) {
+-    unsigned long julianbegin = julian_day_number(ymd_type(ymd.year,1,1));
+-    unsigned long juliantoday = julian_day_number(ymd);
+-    unsigned long day = (julianbegin + 3) % 7;
+-    unsigned long week = (juliantoday + day - julianbegin + 4)/7;
++    int julianbegin = julian_day_number(ymd_type(ymd.year,1,1));
++    int juliantoday = julian_day_number(ymd);
++    int day = (julianbegin + 3) % 7;
++    int week = (juliantoday + day - julianbegin + 4)/7;
+ 
+     if ((week >= 1) && (week <= 52)) {
+       return week;
+@@ -78,7 +78,7 @@
+     unsigned short a = static_cast<unsigned short>((14-ymd.month)/12);
+     unsigned short y = static_cast<unsigned short>(ymd.year + 4800 - a);
+     unsigned short m = static_cast<unsigned short>(ymd.month + 12*a - 3);
+-    unsigned long  d = ymd.day + ((153*m + 2)/5) + 365*y + (y/4) - (y/100) + (y/400) - 32045;
++    date_int_type_  d = ymd.day + ((153*m + 2)/5) + 365*y + (y/4) - (y/100) + (y/400) - 32045;
+     return d;
+   }
+ 

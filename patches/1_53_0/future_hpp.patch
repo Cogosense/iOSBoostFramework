@@ -1,0 +1,42 @@
+--- boost_1_53_0/boost/thread/future.hpp	2012-12-16 11:01:45.000000000 -0800
++++ boost_1_53_0.patched/boost/thread/future.hpp	2014-03-12 12:00:43.000000000 -0700
+@@ -1184,28 +1184,26 @@
+     }
+ 
+     template<typename F1,typename F2,typename F3>
+-    unsigned wait_for_any(F1& f1,F2& f2,F3& f3)
++    void wait_for_any(F1& f1,F2& f2,F3& f3)
+     {
+         detail::future_waiter waiter;
+         waiter.add(f1);
+         waiter.add(f2);
+         waiter.add(f3);
+-        return waiter.wait();
+     }
+ 
+     template<typename F1,typename F2,typename F3,typename F4>
+-    unsigned wait_for_any(F1& f1,F2& f2,F3& f3,F4& f4)
++    void wait_for_any(F1& f1,F2& f2,F3& f3,F4& f4)
+     {
+         detail::future_waiter waiter;
+         waiter.add(f1);
+         waiter.add(f2);
+         waiter.add(f3);
+         waiter.add(f4);
+-        return waiter.wait();
+     }
+ 
+     template<typename F1,typename F2,typename F3,typename F4,typename F5>
+-    unsigned wait_for_any(F1& f1,F2& f2,F3& f3,F4& f4,F5& f5)
++    void wait_for_any(F1& f1,F2& f2,F3& f3,F4& f4,F5& f5)
+     {
+         detail::future_waiter waiter;
+         waiter.add(f1);
+@@ -1213,7 +1211,6 @@
+         waiter.add(f3);
+         waiter.add(f4);
+         waiter.add(f5);
+-        return waiter.wait();
+     }
+ 
+     template <typename R>

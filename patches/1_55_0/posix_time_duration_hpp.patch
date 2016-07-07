@@ -1,0 +1,29 @@
+--- boost_1_55_0/boost/date_time/posix_time/posix_time_duration.hpp	2008-02-27 12:00:24.000000000 -0800
++++ boost_1_55_0.patched/boost/date_time/posix_time/posix_time_duration.hpp	2014-03-12 11:28:15.000000000 -0700
+@@ -20,7 +20,7 @@
+   class hours : public time_duration
+   {
+   public:
+-    explicit hours(long h) :
++    explicit hours(hour_type h) :
+       time_duration(h,0,0)
+     {}
+   };
+@@ -31,7 +31,7 @@
+   class minutes : public time_duration
+   {
+   public:
+-    explicit minutes(long m) :
++    explicit minutes(min_type m) :
+       time_duration(0,m,0)
+     {}
+   };
+@@ -42,7 +42,7 @@
+   class seconds : public time_duration
+   {
+   public:
+-    explicit seconds(long s) :
++    explicit seconds(sec_type s) :
+       time_duration(0,0,s)
+     {}
+   };

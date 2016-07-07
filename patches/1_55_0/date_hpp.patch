@@ -1,0 +1,11 @@
+--- boost_1_55_0/boost/date_time/date.hpp	2012-09-22 15:33:33.000000000 -0700
++++ boost_1_55_0.patched/boost/date_time/date.hpp	2014-03-12 13:46:11.000000000 -0700
+@@ -177,7 +177,7 @@
+       {
+         return date_type(date_rep_type(days_) + dd.get_rep());
+       }
+-      return date_type(date_rep_type(days_) + dd.days());
++      return date_type(date_rep_type(days_) + static_cast<uint32_t>(dd.days()));
+     }
+     date_type operator+=(const duration_type& dd)
+     {

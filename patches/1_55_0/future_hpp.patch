@@ -1,0 +1,29 @@
+--- boost_1_55_0/boost/thread/future.hpp	2013-11-03 12:43:42.000000000 -0800
++++ boost_1_55_0.patched/boost/thread/future.hpp	2014-08-10 12:46:46.000000000 -0700
+@@ -1232,7 +1232,7 @@
+     }
+ 
+     template<typename F1,typename F2,typename F3>
+-    unsigned wait_for_any(F1& f1,F2& f2,F3& f3)
++    unsigned long wait_for_any(F1& f1,F2& f2,F3& f3)
+     {
+         detail::future_waiter waiter;
+         waiter.add(f1);
+@@ -1242,7 +1242,7 @@
+     }
+ 
+     template<typename F1,typename F2,typename F3,typename F4>
+-    unsigned wait_for_any(F1& f1,F2& f2,F3& f3,F4& f4)
++    unsigned long wait_for_any(F1& f1,F2& f2,F3& f3,F4& f4)
+     {
+         detail::future_waiter waiter;
+         waiter.add(f1);
+@@ -1253,7 +1253,7 @@
+     }
+ 
+     template<typename F1,typename F2,typename F3,typename F4,typename F5>
+-    unsigned wait_for_any(F1& f1,F2& f2,F3& f3,F4& f4,F5& f5)
++    unsigned long wait_for_any(F1& f1,F2& f2,F3& f3,F4& f4,F5& f5)
+     {
+         detail::future_waiter waiter;
+         waiter.add(f1);

@@ -1,0 +1,32 @@
+--- boost_1_58_0/boost/date_time/int_adapter.hpp	2015-03-03 14:19:01.000000000 -0800
++++ boost_1_58_0.patched/boost/date_time/int_adapter.hpp	2015-06-11 22:08:40.000000000 -0700
+@@ -230,7 +230,14 @@
+         return int_adapter::neg_infinity();
+       }
+     }
++#ifdef __clang__
++#pragma clang diagnostic push
++#pragma clang diagnostic ignored "-Wconversion"
++#endif
+     return int_adapter<int_type>(value_ + rhs.as_number());
++#ifdef __clang__
++#pragma clang diagnostic pop
++#endif
+   }
+ 
+   int_adapter operator+(const int_type rhs) const
+@@ -279,7 +286,14 @@
+         return int_adapter::pos_infinity();
+       }
+     }
++#ifdef __clang__
++#pragma clang diagnostic push
++#pragma clang diagnostic ignored "-Wconversion"
++#endif
+     return int_adapter<int_type>(value_ - rhs.as_number());
++#ifdef __clang__
++#pragma clang diagnostic pop
++#endif
+   }
+   int_adapter operator-(const int_type rhs) const
+   {
