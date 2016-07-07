@@ -57,7 +57,7 @@ node('osx && ios') {
 	}
 
 	stage 'Build'
-	sh 'build.sh'
+	sh './build.sh'
 
 	stage 'Archive Artifacts'
 	// Archive the SCM logs, the framework directory
