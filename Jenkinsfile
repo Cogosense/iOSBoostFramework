@@ -57,20 +57,14 @@ node('osx && ios') {
 	}
 
 	stage 'Build'
-	sh './build.sh'
+	sh 'make'
 
 	stage 'Archive Artifacts'
 	// Archive the SCM logs, the framework directory
 	step([$class: 'ArtifactArchiver',
-		artifacts: 'SCM/**',
+		artifacts: 'SCM/**, boost.framework/**',
 		fingerprint: true,
 		onlyIfSuccessful: true])
-	dir('ios/Frameworks') {
-	    step([$class: 'ArtifactArchiver',
-		    artifacts: 'boost.framework/**',
-		    fingerprint: true,
-		    onlyIfSuccessful: true])
-	}
 
     } catch(err) {
 	currentBuild.result = "FAILURE"

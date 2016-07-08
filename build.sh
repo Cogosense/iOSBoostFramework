@@ -101,6 +101,11 @@ abort()
     exit 1
 }
 
+print()
+{
+    printf "$*"
+}
+
 doneSection()
 {
     echo
@@ -221,11 +226,11 @@ createFatLibraries()
     rm -rf $BUILDDIR/lib
     mkdir -p $BUILDDIR/lib
 
-    echo -n "Assembling fat libraries... "
+    print "Assembling fat libraries... "
     for ar in `find $ARM -name "*.a"` ; do
 	lib=`basename $ar`
 	name=`echo $ar | sed 's/.*libboost_\([^.]*\).*$/\1/'`
-	echo -n "$name "
+	print "$name "
 	xcrun -sdk iphoneos lipo \
 	    -create \
 	    "$ARM/$lib" \
@@ -245,11 +250,11 @@ createThinLibraries()
     for arch in armv7 arm64 i386 ; do
 	rm -rf $BUILDDIR/$arch
 	mkdir $BUILDDIR/$arch
-	echo -n "Creating $arch thin libraries... "
+	print "Creating $arch thin libraries... "
 	for ar in `find $BUILDDIR/lib -name "*.a"` ; do
 	    lib=`basename $ar`
 	    name=`echo $ar | sed 's/.*libboost_\([^.]*\).*$/\1/'`
-	    echo -n "$name "
+	    print "$name "
 	    xcrun -sdk iphoneos lipo "$ar" -thin $arch -o $BUILDDIR/$arch/$lib
 	done
 	echo
@@ -261,11 +266,11 @@ createThinLibraries158()
     for arch in armv7 arm64 i386 x86_64 ; do
 	rm -rf $BUILDDIR/$arch
 	mkdir $BUILDDIR/$arch
-	echo -n "Creating $arch thin libraries... "
+	print "Creating $arch thin libraries... "
 	for ar in `find $BUILDDIR/lib -name "*.a"` ; do
 	    lib=`basename $ar`
 	    name=`echo $ar | sed 's/.*libboost_\([^.]*\).*$/\1/'`
-	    echo -n "$name "
+	    print "$name "
 	    xcrun -sdk iphoneos lipo "$ar" -thin $arch -o $BUILDDIR/$arch/$lib
 	done
 	echo
@@ -282,11 +287,11 @@ extractAndRenameObjects()
     for arch in armv7 arm64 i386 ; do
 	rm -rf $BUILDDIR/$arch/obj
 	mkdir $BUILDDIR/$arch/obj
-	echo -n "Unpacking $arch thin libraries... "
+	print "Unpacking $arch thin libraries... "
 	for ar in `find $BUILDDIR/$arch -name "*.a"` ; do
 	    lib=`basename $ar`
 	    name=`echo $ar | sed 's/.*libboost_\([^.]*\).*$/\1/'`
-	    echo -n "$name "
+	    print "$name "
 	    rm -rf $BUILDDIR/$arch/tmp
 	    mkdir $BUILDDIR/$arch/tmp
 	    (cd $BUILDDIR/$arch/tmp && xcrun -sdk iphoneos ar -x ../$lib) \
@@ -305,11 +310,11 @@ extractAndRenameObjects158()
     for arch in armv7 arm64 i386 x86_64 ; do
 	rm -rf $BUILDDIR/$arch/obj
 	mkdir $BUILDDIR/$arch/obj
-	echo -n "Unpacking $arch thin libraries... "
+	print "Unpacking $arch thin libraries... "
 	for ar in `find $BUILDDIR/$arch -name "*.a"` ; do
 	    lib=`basename $ar`
 	    name=`echo $ar | sed 's/.*libboost_\([^.]*\).*$/\1/'`
-	    echo -n "$name "
+	    print "$name "
 	    rm -rf $BUILDDIR/$arch/tmp
 	    mkdir $BUILDDIR/$arch/tmp
 	    (cd $BUILDDIR/$arch/tmp && xcrun -sdk iphoneos ar -x ../$lib) \
@@ -329,10 +334,10 @@ extractAndRenameObjects158()
 #
 createThinLibBoostForEachArch()
 {
-    echo -n "Creating libboost.a... "
+    print "Creating libboost.a... "
     for arch in armv7 arm64 i386 ; do
 	rm -f $BUILDDIR/$arch/libbboost.a
-	echo -n "$arch "
+	print "$arch "
 	(
 	    #
 	    # ranlib s run seperately because empty translation units
@@ -349,10 +354,10 @@ createThinLibBoostForEachArch()
 
 createThinLibBoostForEachArch158()
 {
-    echo -n "Creating libboost.a... "
+    print "Creating libboost.a... "
     for arch in armv7 arm64 i386 x86_64 ; do
 	rm -f $BUILDDIR/$arch/libbboost.a
-	echo -n "$arch "
+	print "$arch "
 	(
 	    #
 	    # ranlib s run seperately because empty translation units
@@ -458,6 +463,7 @@ buildFramework()
 </dict>
 </plist>
 EOF
+    mv -f $FRAMEWORK_BUNDLE $SRCDIR || abort "unable to move boost framework directory"
     doneSection
 }
 
