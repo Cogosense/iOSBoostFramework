@@ -8,6 +8,7 @@ all : env
 	unset IPHONEOS_DEPLOYMENT_TARGET ;\
 	unset SDKROOT ;\
 	./build.sh
+	tar -cjf boost.framework.tar.bz2 boost.framework
 
 env:
 	env

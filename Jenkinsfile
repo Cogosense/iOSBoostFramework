@@ -62,7 +62,7 @@ node('osx && ios') {
 	stage 'Archive Artifacts'
 	// Archive the SCM logs, the framework directory
 	step([$class: 'ArtifactArchiver',
-		artifacts: 'SCM/**, boost.framework/**',
+		artifacts: 'SCM/**, boost.framework.tar.bz2',
 		fingerprint: true,
 		onlyIfSuccessful: true])
 
