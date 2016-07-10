@@ -51,7 +51,7 @@ node('osx && ios') {
 	stage 'Notify Build Started'
 	if(contributors && contributors != '') {
 	    mail subject: "Jenkins Build Started: (${env.JOB_NAME})",
-		    body: "You are on the hook}.\nFor more information: ${env.JOB_URL}",
+		    body: "You are on the hook.\nFor more information: ${env.JOB_URL}",
 		    to: contributors,
 		    from: 'support@cogosense.com'
 	}
@@ -79,7 +79,7 @@ node('osx && ios') {
     stage 'Notify Build Completion'
     if(contributors && contributors != '') {
 	mail subject: "Jenkins Build Completed Successfully: (${env.JOB_NAME})",
-		body: "You are off the hook}.\nFor more information: ${env.BUILD_URL}",
+		body: "You are off the hook.\nFor more information: ${env.BUILD_URL}",
 		to: contributors,
 		from: 'support@cogosense.com'
     }
