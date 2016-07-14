@@ -7,46 +7,39 @@ properties properties: [
 
 node('osx && ios') {
     def contributors = null
-    def scmLogWs = 'scmLogs' + env.BUILD_NUMBER
     currentBuild.result = "SUCCESS"
 
     // clean workspace
     deleteDir()
-    sshagent(['38bf8b09-9e52-421a-a8ed-5280fcb921af']) {
-	stage 'Checkout Source'
-	checkout scm
-    }
-
     try {
-	stage name: 'Create Change Logs', concurrency: 1
-	ws("workspace/${env.JOB_NAME}/../${scmLogWs}") {
-	    sshagent(['38bf8b09-9e52-421a-a8ed-5280fcb921af']) {
-		checkout scm
+	sshagent(['38bf8b09-9e52-421a-a8ed-5280fcb921af']) {
+	    stage 'Checkout Source'
+	    checkout scm
 
-		// Load the SCM util scripts first
-		checkout([$class: 'GitSCM',
-			    branches: [[name: '*/master']],
-			    doGenerateSubmoduleConfigurations: false,
-			    extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'utils']],
-			    submoduleCfg: [],
-			    userRemoteConfigs: [[url: 'git@github.com:Cogosense/JenkinsUtils.git', credentialsId: '38bf8b09-9e52-421a-a8ed-5280fcb921af']]])
+	    stage name: 'Create Change Logs', concurrency: 1
 
-		dir('./SCM') {
-		    sh '../utils/scmBuildDate > TIMESTAMP'
-		    sh '../utils/scmBuildTag > TAG'
-		    sh '../utils/scmBuildContributors > CONTRIBUTORS'
-		    sh '../utils/scmBuildOnHookEmail > ONHOOK_EMAIL'
-		    sh '../utils/scmCreateChangeLogs -o CHANGELOG'
-		    sh '../utils/scmTagLastBuild'
-		}
+	    // Load the SCM util scripts first
+	    checkout([$class: 'GitSCM',
+			branches: [[name: '*/master']],
+			doGenerateSubmoduleConfigurations: false,
+			extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'utils']],
+			submoduleCfg: [],
+			userRemoteConfigs: [[url: 'git@github.com:Cogosense/JenkinsUtils.git', credentialsId: '38bf8b09-9e52-421a-a8ed-5280fcb921af']]])
+
+	    dir('./SCM') {
+		sh '../utils/scmBuildDate > TIMESTAMP'
+		sh '../utils/scmBuildTag > TAG'
+		sh '../utils/scmBuildContributors > CONTRIBUTORS'
+		sh '../utils/scmBuildOnHookEmail > ONHOOK_EMAIL'
+		sh '../utils/scmCreateChangeLogs -o CHANGELOG'
+		sh '../utils/scmTagLastBuild'
 	    }
-	    stash name: 'SCM', includes: 'SCM/**'
-	    // remove workspace
-	    deleteDir()
 	}
 
-	unstash 'SCM'
 	contributors = readFile './SCM/ONHOOK_EMAIL'
+
+	stage 'Capture Build Environment'
+	sh 'env -u PWD -u HOME -u PATH -u \'BASH_FUNC_copy_reference_file()\' > SCM/build.env'
 
 	stage 'Notify Build Started'
 	if(contributors && contributors != '') {
