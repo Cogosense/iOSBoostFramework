@@ -46,13 +46,13 @@ VERSION = 1_58_0
 TOPDIR = $(CURDIR)
 SRCDIR = $(TOPDIR)/$(NAME)_$(VERSION)
 #
-# ARCHS, BUILD_DIR and DERIVED_FILE_DIR are set by xcode
+# ARCHS, BUILT_PRODUCTS_DIR and DERIVED_FILE_DIR are set by xcode
 # only set them if make is invoked directly
 #
 ARCHS ?= $(ARM_V7_ARCH) $(ARM_V7S_ARCH) $(ARM_64_ARCH) $(I386_ARCH) $(X86_64_ARCH)
-BUILD_DIR ?= $(TOPDIR)/build
+BUILT_PRODUCTS_DIR ?= $(TOPDIR)/build
 DERIVED_FILE_DIR ?= $(TOPDIR)/build
-BUILD_DIR ?= $(TOPDIR)
+BUILT_PRODUCTS_DIR ?= $(TOPDIR)
 TARBALL = $(NAME)_$(VERSION).tar.bz2
 ARM_V7_HOST = armv7-apple-darwin
 ARM_V7S_HOST = armv7s-apple-darwin
@@ -103,26 +103,15 @@ define Info_plist
 </plist>\n
 endef
 
-#
-# bjam source code is not c99 compatible, setting iOS9.3
-# compatibility forces c99 mode, iOS9.3 is default level for
+.PHONY: framework-build
 
-#
-#all : env
-#	unset IPHONEOS_DEPLOYMENT_TARGET ;\
-#	unset SDKROOT ;\
-#	BUILD_DIR=$(BUILD_DIR) \
-#	DERIVED_FILE_DIR=$(DERIVED_FILE_DIR) \
-#	BOOST_VERSION=$(VERSION) \
-#	./build.sh
-#	tar -C $(BUILD_DIR) -cjf $(FRAMEWORKBUNDLE).tar.bz2 $(FRAMEWORKBUNDLE)
 all : env framework-build
 
 distclean : clean
 	$(RM) $(TARBALL)
 
 clean : mostlyclean
-	$(RM) -r $(BUILD_DIR)/$(FRAMEWORKBUNDLE)
+	$(RM) -r $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)
 	$(RM) -r $(SRCDIR)
 	$(RM) $(FRAMEWORKBUNDLE).tar.bz2
 
@@ -168,26 +157,26 @@ $(DERIVED_FILE_DIR)/$(I386_ARCH) \
 $(DERIVED_FILE_DIR)/$(X86_64_ARCH) :
 	mkdir -p $@
 
-$(DERIVED_FILE_DIR)/$(ARM_V7_ARCH)/user-config.jam \
-$(DERIVED_FILE_DIR)/$(ARM_V7S_ARCH)/user-config.jam \
-$(DERIVED_FILE_DIR)/$(ARM_64_ARCH)/user-config.jam \
-$(DERIVED_FILE_DIR)/$(I386_ARCH)/user-config.jam \
-$(DERIVED_FILE_DIR)/$(X86_64_ARCH)/user-config.jam : $(SRCDIR)/b2
+$(DERIVED_FILE_DIR)/user-config-$(ARM_V7_ARCH).jam \
+$(DERIVED_FILE_DIR)/user-config-$(ARM_V7S_ARCH).jam \
+$(DERIVED_FILE_DIR)/user-config-$(ARM_64_ARCH).jam \
+$(DERIVED_FILE_DIR)/user-config-$(I386_ARCH).jam \
+$(DERIVED_FILE_DIR)/user-config-$(X86_64_ARCH).jam : $(SRCDIR)/b2
 	    echo using clang : $(JAM_ARCH) > $@
 	    echo "    : xcrun --sdk $(JAM_SDK) clang++" >> $@
 	    echo "    : <cxxflags>\"-miphoneos-version-min=$(MIN_IOS_VER) $(XCODE_BITCODE_FLAG) -arch $(JAM_ARCH) $(EXTRA_CPPFLAGS) $(JAM_DEFINES)\"" >> $@
 	    echo "      <striper>" >> $@
 	    echo "    ;" >> $@
 
-$(DERIVED_FILE_DIR)/$(ARM_V7_ARCH)/$(FRAMEWORKBUNDLE) : $(DERIVED_FILE_DIR)/$(ARM_V7_ARCH) $(DERIVED_FILE_DIR)/$(ARM_V7_ARCH)/user-config.jam
+$(DERIVED_FILE_DIR)/$(ARM_V7_ARCH)/$(FRAMEWORKBUNDLE) : $(DERIVED_FILE_DIR)/$(ARM_V7_ARCH) $(DERIVED_FILE_DIR)/user-config-$(ARM_V7_ARCH).jam
 
-$(DERIVED_FILE_DIR)/$(ARM_V7S_ARCH)/$(FRAMEWORKBUNDLE) : $(DERIVED_FILE_DIR)/$(ARM_V7S_ARCH) $(DERIVED_FILE_DIR)/$(ARM_V7S_ARCH)/user-config.jam
+$(DERIVED_FILE_DIR)/$(ARM_V7S_ARCH)/$(FRAMEWORKBUNDLE) : $(DERIVED_FILE_DIR)/$(ARM_V7S_ARCH) $(DERIVED_FILE_DIR)/user-config-$(ARM_V7S_ARCH).jam
 
-$(DERIVED_FILE_DIR)/$(ARM_64_ARCH)/$(FRAMEWORKBUNDLE) : $(DERIVED_FILE_DIR)/$(ARM_64_ARCH) $(DERIVED_FILE_DIR)/$(ARM_64_ARCH)/user-config.jam
+$(DERIVED_FILE_DIR)/$(ARM_64_ARCH)/$(FRAMEWORKBUNDLE) : $(DERIVED_FILE_DIR)/$(ARM_64_ARCH) $(DERIVED_FILE_DIR)/user-config-$(ARM_64_ARCH).jam
 
-$(DERIVED_FILE_DIR)/$(I386_ARCH)/$(FRAMEWORKBUNDLE) : $(DERIVED_FILE_DIR)/$(I386_ARCH) $(DERIVED_FILE_DIR)/$(I386_ARCH)/user-config.jam
+$(DERIVED_FILE_DIR)/$(I386_ARCH)/$(FRAMEWORKBUNDLE) : $(DERIVED_FILE_DIR)/$(I386_ARCH) $(DERIVED_FILE_DIR)/user-config-$(I386_ARCH).jam
 
-$(DERIVED_FILE_DIR)/$(X86_64_ARCH)/$(FRAMEWORKBUNDLE) : $(DERIVED_FILE_DIR)/$(X86_64_ARCH) $(DERIVED_FILE_DIR)/$(X86_64_ARCH)/user-config.jam
+$(DERIVED_FILE_DIR)/$(X86_64_ARCH)/$(FRAMEWORKBUNDLE) : $(DERIVED_FILE_DIR)/$(X86_64_ARCH) $(DERIVED_FILE_DIR)/user-config-$(X86_64_ARCH).jam
 
 $(DERIVED_FILE_DIR)/$(ARM_V7_ARCH)/$(FRAMEWORKBUNDLE) \
 $(DERIVED_FILE_DIR)/$(ARM_V7S_ARCH)/$(FRAMEWORKBUNDLE) \
@@ -195,7 +184,7 @@ $(DERIVED_FILE_DIR)/$(ARM_64_ARCH)/$(FRAMEWORKBUNDLE) \
 $(DERIVED_FILE_DIR)/$(I386_ARCH)/$(FRAMEWORKBUNDLE) \
 $(DERIVED_FILE_DIR)/$(X86_64_ARCH)/$(FRAMEWORKBUNDLE) :
 	cd $(SRCDIR) && \
-	BOOST_BUILD_USER_CONFIG=$(dir $@)/user-config.jam \
+	BOOST_BUILD_USER_CONFIG=$(DERIVED_FILE_DIR)/user-config-$(JAM_ARCH).jam \
 	./b2 --build-dir="$(dir $@)" --prefix="$@" toolset=clang-darwin-$(JAM_ARCH) link=static install 
 
 $(DERIVED_FILE_DIR)/$(ARM_V7_ARCH)/$(FRAMEWORKBUNDLE)/lib/libboost.a : JAM_SDK = iphoneos
@@ -291,32 +280,32 @@ framework-no-build: $(addprefix $(DERIVED_FILE_DIR)/, $(addsuffix /$(FRAMEWORKBU
 FIRST_ARCH = $(firstword $(ARCHS))
 
 bundle-dirs :
-	$(RM) -r $(BUILD_DIR)/$(FRAMEWORKBUNDLE)
-	mkdir $(BUILD_DIR)/$(FRAMEWORKBUNDLE)
-	mkdir $(BUILD_DIR)/$(FRAMEWORKBUNDLE)/Versions
-	mkdir $(BUILD_DIR)/$(FRAMEWORKBUNDLE)/Versions/$(FRAMEWORK_VERSION)
-	mkdir $(BUILD_DIR)/$(FRAMEWORKBUNDLE)/Versions/$(FRAMEWORK_VERSION)/Resources
-	mkdir $(BUILD_DIR)/$(FRAMEWORKBUNDLE)/Versions/$(FRAMEWORK_VERSION)/Headers
-	mkdir $(BUILD_DIR)/$(FRAMEWORKBUNDLE)/Versions/$(FRAMEWORK_VERSION)/Documentation
-	ln -s $(FRAMEWORK_VERSION) $(BUILD_DIR)/$(FRAMEWORKBUNDLE)/Versions/Current
-	ln -s Versions/Current/Headers $(BUILD_DIR)/$(FRAMEWORKBUNDLE)/Headers
-	ln -s Versions/Current/Resources $(BUILD_DIR)/$(FRAMEWORKBUNDLE)/Resources
-	ln -s Versions/Current/Documentation $(BUILD_DIR)/$(FRAMEWORKBUNDLE)/Documentation
-	ln -s Versions/Current/$(FRAMEWORK_NAME) $(BUILD_DIR)/$(FRAMEWORKBUNDLE)/$(FRAMEWORK_NAME)
+	$(RM) -r $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)
+	mkdir -p $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)
+	mkdir $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions
+	mkdir $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions/$(FRAMEWORK_VERSION)
+	mkdir $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions/$(FRAMEWORK_VERSION)/Resources
+	mkdir $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions/$(FRAMEWORK_VERSION)/Headers
+	mkdir $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions/$(FRAMEWORK_VERSION)/Documentation
+	ln -s $(FRAMEWORK_VERSION) $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions/Current
+	ln -s Versions/Current/Headers $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Headers
+	ln -s Versions/Current/Resources $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Resources
+	ln -s Versions/Current/Documentation $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Documentation
+	ln -s Versions/Current/$(FRAMEWORK_NAME) $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/$(FRAMEWORK_NAME)
 
 bundle-resources : Info.plist bundle-dirs
-	cp Info.plist $(BUILD_DIR)/$(FRAMEWORKBUNDLE)/Versions/$(FRAMEWORK_VERSION)/Resources/
+	cp Info.plist $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions/$(FRAMEWORK_VERSION)/Resources/
 
 bundle-headers : bundle-dirs
-	cp -R $(DERIVED_FILE_DIR)/$(FIRST_ARCH)/$(FRAMEWORKBUNDLE)/include/boost/  $(BUILD_DIR)/$(FRAMEWORKBUNDLE)/Versions/$(FRAMEWORK_VERSION)/Headers/
+	cp -R $(DERIVED_FILE_DIR)/$(FIRST_ARCH)/$(FRAMEWORKBUNDLE)/include/boost/  $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions/$(FRAMEWORK_VERSION)/Headers/
 
 bundle-libraries : bundle-dirs
 	for arch in $(ARCHS) ; do libs="$$libs $(DERIVED_FILE_DIR)/$$arch/$(FRAMEWORKBUNDLE)/lib/libboost.a" ; done ; \
-	xcrun -sdk iphoneos lipo -create $$libs -o $(BUILD_DIR)/$(FRAMEWORKBUNDLE)/Versions/$(FRAMEWORK_VERSION)/$(FRAMEWORK_NAME)
+	xcrun -sdk iphoneos lipo -create $$libs -o $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions/$(FRAMEWORK_VERSION)/$(FRAMEWORK_NAME)
 
 $(FRAMEWORKBUNDLE) : bundle-dirs bundle-resources bundle-headers bundle-libraries
 
 $(FRAMEWORKBUNDLE).tar.bz2 : $(FRAMEWORKBUNDLE)
 	$(RM) -f $(FRAMEWORKBUNDLE).tar.bz2
-	tar -C $(BUILD_DIR) -cjf $(FRAMEWORKBUNDLE).tar.bz2 $(FRAMEWORKBUNDLE)
+	tar -C $(BUILT_PRODUCTS_DIR) -cjf $(FRAMEWORKBUNDLE).tar.bz2 $(FRAMEWORKBUNDLE)
 
