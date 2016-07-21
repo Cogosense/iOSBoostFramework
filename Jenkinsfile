@@ -49,8 +49,37 @@ node('osx && ios') {
 		    from: 'support@cogosense.com'
 	}
 
-	stage 'Build'
-	sh 'make'
+        stash name: 'Makefile', includes: 'Makefile'
+
+        stage 'Build Parallel'
+        parallel (
+            "armv7" : {
+                node('osx && ios') {
+                    // clean workspace
+                    deleteDir()
+                    unstash 'Makefile'
+                    sh 'make clean'
+                    sh 'make ARCHS=armv7'
+                    stash name: 'armv7', includes: '**/armv7/boost.framework/**'
+                }
+            },
+            "arm64" : {
+                node('osx && ios') {
+                    // clean workspace
+                    deleteDir()
+                    unstash 'Makefile'
+                    sh 'make clean'
+                    sh 'make ARCHS=arm64'
+                    stash name: 'arm64', includes: '**/arm64/boost.framework/**'
+                }
+            }
+        )
+
+        unstash 'armv7'
+        unstash 'arm64'
+
+        stage 'Assemble Framework'
+        sh 'make ARCHS="armv7 arm64" framework-no-build'
 
 	stage 'Archive Artifacts'
 	// Archive the SCM logs, the framework directory
