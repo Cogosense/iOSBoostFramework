@@ -16,16 +16,16 @@
 /* End PBXGroup section */
 
 /* Begin PBXLegacyTarget section */
-		F1C800361D2F0811004CFAAB /* iOSBoostFramework */ = {
+		F1C800361D2F0811004CFAAB /* boost.framework */ = {
 			isa = PBXLegacyTarget;
 			buildArgumentsString = "$(ACTION)";
-			buildConfigurationList = F1C800371D2F0811004CFAAB /* Build configuration list for PBXLegacyTarget "iOSBoostFramework" */;
+			buildConfigurationList = F1C800371D2F0811004CFAAB /* Build configuration list for PBXLegacyTarget "boost.framework" */;
 			buildPhases = (
 			);
 			buildToolPath = /usr/bin/make;
 			dependencies = (
 			);
-			name = iOSBoostFramework;
+			name = boost.framework;
 			passBuildSettingsInEnvironment = 1;
 			productName = iOSBoostFramework;
 		};
@@ -55,7 +55,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				F1C800361D2F0811004CFAAB /* iOSBoostFramework */,
+				F1C800361D2F0811004CFAAB /* boost.framework */,
 			);
 		};
 /* End PBXProject section */
@@ -178,7 +178,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		F1C800371D2F0811004CFAAB /* Build configuration list for PBXLegacyTarget "iOSBoostFramework" */ = {
+		F1C800371D2F0811004CFAAB /* Build configuration list for PBXLegacyTarget "boost.framework" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				F1C800381D2F0811004CFAAB /* Debug */,
