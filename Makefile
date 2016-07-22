@@ -16,7 +16,8 @@
 # make ARCHS="armv7 arm64" ENABLE_BITCODE=YES BITCODE_GENERATION_MODE=bitcode - create bitcode
 # make ARCHS="armv7 arm64" ENABLE_BITCODE=YES BITCODE_GENERATION_MODE=marker - add bitcode marker (but no real bitcode)
 # 
-# The bitcode flags are standard Xcode flags.
+# The ENABLE_BITCODE and BITCODE_GENERATION_MODE flags are set in the Xcode project settings
+#
 
 SHELL = /bin/bash
 
@@ -70,14 +71,27 @@ FRAMEWORKBUNDLE = $(FRAMEWORK_NAME).framework
 DOWNLOAD_URL = http://sourceforge.net/projects/boost/files/boost/1.58.0/$(TARBALL)
 
 #
+# Files used to trigger builds for each architecture
+# TARGET_BUILD_LIB installed library under prefix that is being built
+# TARGET_NOBUILD_ARTIFACT file under install prefix that is built indirectly
+#
+TARGET_BUILD_LIB = /lib/libboost.a
+TARGET_NOBUILD_ARTIFACT = /include/boost/config.hpp
+
+INSTALLED_BUILD_LIB = $(FRAMEWORKBUNDLE)$(TARGET_BUILD_LIB)
+INSTALLED_NOBUILD_ARTIFACT = $(FRAMEWORKBUNDLE)$(TARGET_NOBUILD_ARTIFACT)
+
+BUILT_LIBS = $(addprefix $(DERIVED_FILE_DIR)/, $(addsuffix /$(INSTALLED_BUILD_LIB), $(ARCHS)))
+NOBUILD_ARTIFACTS = $(addprefix $(DERIVED_FILE_DIR)/, $(addsuffix /$(INSTALLED_NOBUILD_ARTIFACT), $(ARCHS)))
+
+#
 # The following options must be the same for all projects that
 # link against this boost library
 # -fvisibility=hidden
 # -fvisibility-inlines-hidden
-#
 # (if -fvisibility=hidden is specified, then -fvisibility-inlines-hidden is unnecessary as inlines are already hidden)
 #
-EXTRA_CPPFLAGS = -DBOOST_AC_USE_PTHREADS -DBOOST_SP_USE_PTHREADS -stdlib=libc++ -std=gnu++11 -fvisibility=default
+EXTRA_CPPFLAGS = -DBOOST_AC_USE_PTHREADS -DBOOST_SP_USE_PTHREADS -stdlib=libc++ -std=c++11
 BOOST_LIBS = test thread atomic signals filesystem regex program_options system date_time serialization exception random
 
 define Info_plist
@@ -117,6 +131,7 @@ clean : mostlyclean
 
 mostlyclean :
 	$(RM) Info.plist
+	$(RM) $(DERIVED_FILE_DIR)/*.jam
 	$(RM) -r $(DERIVED_FILE_DIR)/$(ARM_V7_ARCH)
 	$(RM) -r $(DERIVED_FILE_DIR)/$(ARM_V7S_ARCH)
 	$(RM) -r $(DERIVED_FILE_DIR)/$(ARM_64_ARCH)
@@ -130,7 +145,7 @@ $(TARBALL) :
 	curl -L --retry 10 -s -o $@ $(DOWNLOAD_URL) || $(RM) $@
 
 $(SRCDIR)/bootstrap.sh : $(TARBALL)
-	tar xf $(TARBALL)
+	tar xmf $(TARBALL)
 	if [ -d patches/$(VERSION) ] ; then \
 	    for p in patches/$(VERSION)/* ; do \
 		if [ -f $$p ] ; then \
@@ -168,101 +183,74 @@ $(DERIVED_FILE_DIR)/user-config-$(X86_64_ARCH).jam : $(SRCDIR)/b2
 	    echo "      <striper>" >> $@
 	    echo "    ;" >> $@
 
-$(DERIVED_FILE_DIR)/$(ARM_V7_ARCH)/$(FRAMEWORKBUNDLE) : $(DERIVED_FILE_DIR)/$(ARM_V7_ARCH) $(DERIVED_FILE_DIR)/user-config-$(ARM_V7_ARCH).jam
+$(DERIVED_FILE_DIR)/$(ARM_V7_ARCH)/$(INSTALLED_BUILD_LIB) : $(DERIVED_FILE_DIR)/$(ARM_V7_ARCH) $(DERIVED_FILE_DIR)/user-config-$(ARM_V7_ARCH).jam
 
-$(DERIVED_FILE_DIR)/$(ARM_V7S_ARCH)/$(FRAMEWORKBUNDLE) : $(DERIVED_FILE_DIR)/$(ARM_V7S_ARCH) $(DERIVED_FILE_DIR)/user-config-$(ARM_V7S_ARCH).jam
+$(DERIVED_FILE_DIR)/$(ARM_V7S_ARCH)/$(INSTALLED_BUILD_LIB) : $(DERIVED_FILE_DIR)/$(ARM_V7S_ARCH) $(DERIVED_FILE_DIR)/user-config-$(ARM_V7S_ARCH).jam
 
-$(DERIVED_FILE_DIR)/$(ARM_64_ARCH)/$(FRAMEWORKBUNDLE) : $(DERIVED_FILE_DIR)/$(ARM_64_ARCH) $(DERIVED_FILE_DIR)/user-config-$(ARM_64_ARCH).jam
+$(DERIVED_FILE_DIR)/$(ARM_64_ARCH)/$(INSTALLED_BUILD_LIB) : $(DERIVED_FILE_DIR)/$(ARM_64_ARCH) $(DERIVED_FILE_DIR)/user-config-$(ARM_64_ARCH).jam
 
-$(DERIVED_FILE_DIR)/$(I386_ARCH)/$(FRAMEWORKBUNDLE) : $(DERIVED_FILE_DIR)/$(I386_ARCH) $(DERIVED_FILE_DIR)/user-config-$(I386_ARCH).jam
+$(DERIVED_FILE_DIR)/$(I386_ARCH)/$(INSTALLED_BUILD_LIB) : $(DERIVED_FILE_DIR)/$(I386_ARCH) $(DERIVED_FILE_DIR)/user-config-$(I386_ARCH).jam
 
-$(DERIVED_FILE_DIR)/$(X86_64_ARCH)/$(FRAMEWORKBUNDLE) : $(DERIVED_FILE_DIR)/$(X86_64_ARCH) $(DERIVED_FILE_DIR)/user-config-$(X86_64_ARCH).jam
+$(DERIVED_FILE_DIR)/$(X86_64_ARCH)/$(INSTALLED_BUILD_LIB) : $(DERIVED_FILE_DIR)/$(X86_64_ARCH) $(DERIVED_FILE_DIR)/user-config-$(X86_64_ARCH).jam
 
-$(DERIVED_FILE_DIR)/$(ARM_V7_ARCH)/$(FRAMEWORKBUNDLE) \
-$(DERIVED_FILE_DIR)/$(ARM_V7S_ARCH)/$(FRAMEWORKBUNDLE) \
-$(DERIVED_FILE_DIR)/$(ARM_64_ARCH)/$(FRAMEWORKBUNDLE) \
-$(DERIVED_FILE_DIR)/$(I386_ARCH)/$(FRAMEWORKBUNDLE) \
-$(DERIVED_FILE_DIR)/$(X86_64_ARCH)/$(FRAMEWORKBUNDLE) :
+$(DERIVED_FILE_DIR)/$(ARM_V7_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_SDK = iphoneos
+$(DERIVED_FILE_DIR)/$(ARM_V7_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_ARCH = $(ARM_V7_ARCH)
+$(DERIVED_FILE_DIR)/$(ARM_V7_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_DEFINES = -D_LITTLE_ENDIAN
+
+$(DERIVED_FILE_DIR)/$(ARM_V7S_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_SDK = iphoneos
+$(DERIVED_FILE_DIR)/$(ARM_V7S_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_ARCH = $(ARM_V7S_ARCH)
+$(DERIVED_FILE_DIR)/$(ARM_V7S_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_DEFINES = -D_LITTLE_ENDIAN
+
+$(DERIVED_FILE_DIR)/$(ARM_64_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_SDK = iphoneos
+$(DERIVED_FILE_DIR)/$(ARM_64_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_ARCH = $(ARM_64_ARCH)
+$(DERIVED_FILE_DIR)/$(ARM_64_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_DEFINES = -D_LITTLE_ENDIAN
+
+$(DERIVED_FILE_DIR)/$(I386_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_SDK = iphonesimulator
+$(DERIVED_FILE_DIR)/$(I386_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_ARCH = $(I386_ARCH)
+
+$(DERIVED_FILE_DIR)/$(X86_64_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_SDK = iphonesimulator
+$(DERIVED_FILE_DIR)/$(X86_64_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_ARCH = $(X86_64_ARCH)
+
+$(DERIVED_FILE_DIR)/$(ARM_V7_ARCH)/$(INSTALLED_BUILD_LIB) \
+$(DERIVED_FILE_DIR)/$(ARM_V7S_ARCH)/$(INSTALLED_BUILD_LIB) \
+$(DERIVED_FILE_DIR)/$(ARM_64_ARCH)/$(INSTALLED_BUILD_LIB) \
+$(DERIVED_FILE_DIR)/$(I386_ARCH)/$(INSTALLED_BUILD_LIB) \
+$(DERIVED_FILE_DIR)/$(X86_64_ARCH)/$(INSTALLED_BUILD_LIB) : 
+	builddir="$(DERIVED_FILE_DIR)/$(JAM_ARCH)" ; \
+	installdir="$(DERIVED_FILE_DIR)/$(JAM_ARCH)/$(FRAMEWORKBUNDLE)" ; \
 	cd $(SRCDIR) && \
 	BOOST_BUILD_USER_CONFIG=$(DERIVED_FILE_DIR)/user-config-$(JAM_ARCH).jam \
-	./b2 --build-dir="$(dir $@)" --prefix="$@" toolset=clang-darwin-$(JAM_ARCH) link=static install 
-
-$(DERIVED_FILE_DIR)/$(ARM_V7_ARCH)/$(FRAMEWORKBUNDLE)/lib/libboost.a : JAM_SDK = iphoneos
-$(DERIVED_FILE_DIR)/$(ARM_V7_ARCH)/$(FRAMEWORKBUNDLE)/lib/libboost.a : JAM_ARCH = $(ARM_V7_ARCH)
-$(DERIVED_FILE_DIR)/$(ARM_V7_ARCH)/$(FRAMEWORKBUNDLE)/lib/libboost.a : JAM_DEFINES = -D_LITTLE_ENDIAN
-$(DERIVED_FILE_DIR)/$(ARM_V7_ARCH)/$(FRAMEWORKBUNDLE)/lib/libboost.a : $(DERIVED_FILE_DIR)/$(ARM_V7_ARCH)/$(FRAMEWORKBUNDLE)
-
-$(DERIVED_FILE_DIR)/$(ARM_V7S_ARCH)/$(FRAMEWORKBUNDLE)/lib/libboost.a : JAM_SDK = iphoneos
-$(DERIVED_FILE_DIR)/$(ARM_V7S_ARCH)/$(FRAMEWORKBUNDLE)/lib/libboost.a : JAM_ARCH = $(ARM_V7S_ARCH)
-$(DERIVED_FILE_DIR)/$(ARM_V7S_ARCH)/$(FRAMEWORKBUNDLE)/lib/libboost.a : JAM_DEFINES = -D_LITTLE_ENDIAN
-$(DERIVED_FILE_DIR)/$(ARM_V7S_ARCH)/$(FRAMEWORKBUNDLE)/lib/libboost.a : $(DERIVED_FILE_DIR)/$(ARM_V7S_ARCH)/$(FRAMEWORKBUNDLE)
-
-$(DERIVED_FILE_DIR)/$(ARM_64_ARCH)/$(FRAMEWORKBUNDLE)/lib/libboost.a : JAM_SDK = iphoneos
-$(DERIVED_FILE_DIR)/$(ARM_64_ARCH)/$(FRAMEWORKBUNDLE)/lib/libboost.a : JAM_ARCH = $(ARM_64_ARCH)
-$(DERIVED_FILE_DIR)/$(ARM_64_ARCH)/$(FRAMEWORKBUNDLE)/lib/libboost.a : JAM_DEFINES = -D_LITTLE_ENDIAN
-$(DERIVED_FILE_DIR)/$(ARM_64_ARCH)/$(FRAMEWORKBUNDLE)/lib/libboost.a : $(DERIVED_FILE_DIR)/$(ARM_64_ARCH)/$(FRAMEWORKBUNDLE)
-
-$(DERIVED_FILE_DIR)/$(I386_ARCH)/$(FRAMEWORKBUNDLE)/lib/libboost.a : JAM_SDK = iphonesimulator
-$(DERIVED_FILE_DIR)/$(I386_ARCH)/$(FRAMEWORKBUNDLE)/lib/libboost.a : JAM_ARCH = $(I386_ARCH)
-$(DERIVED_FILE_DIR)/$(I386_ARCH)/$(FRAMEWORKBUNDLE)/lib/libboost.a : $(DERIVED_FILE_DIR)/$(I386_ARCH)/$(FRAMEWORKBUNDLE)
-
-$(DERIVED_FILE_DIR)/$(X86_64_ARCH)/$(FRAMEWORKBUNDLE)/lib/libboost.a : JAM_SDK = iphonesimulator
-$(DERIVED_FILE_DIR)/$(X86_64_ARCH)/$(FRAMEWORKBUNDLE)/lib/libboost.a : JAM_ARCH = $(X86_64_ARCH)
-$(DERIVED_FILE_DIR)/$(X86_64_ARCH)/$(FRAMEWORKBUNDLE)/lib/libboost.a :  $(DERIVED_FILE_DIR)/$(X86_64_ARCH)/$(FRAMEWORKBUNDLE)
-
-$(DERIVED_FILE_DIR)/$(ARM_V7_ARCH)/$(FRAMEWORKBUNDLE)/lib/libboost.a \
-$(DERIVED_FILE_DIR)/$(ARM_V7S_ARCH)/$(FRAMEWORKBUNDLE)/lib/libboost.a \
-$(DERIVED_FILE_DIR)/$(ARM_64_ARCH)/$(FRAMEWORKBUNDLE)/lib/libboost.a \
-$(DERIVED_FILE_DIR)/$(I386_ARCH)/$(FRAMEWORKBUNDLE)/lib/libboost.a \
-$(DERIVED_FILE_DIR)/$(X86_64_ARCH)/$(FRAMEWORKBUNDLE)/lib/libboost.a : 
-	cd $(dir $@) && printf "[$(JAM_ARCH)] extracting... " && \
-	for ar in `find $(dir $@) -name "*.a"` ; do \
+	./b2 --build-dir="$$builddir" --prefix="$$installdir" toolset=clang-darwin-$(JAM_ARCH) link=static install && \
+	cd $$installdir/lib && printf "[$(JAM_ARCH)] extracting... " && \
+	for ar in `find . -name "*.a"` ; do \
 	    boostlib=`basename $$ar` ; \
-	    libname=`echo $$boostlib | sed 's/.*libboost_\([^.]*\).*$$/\1/'` ; \
-	    mkdir $$libname && printf "$$libname " ; \
-	    (cd $$libname && xcrun -sdk $(JAM_SDK) ar -x ../$$boostlib) || { \
-		echo "failed to extract $(dir $@)/$$boostlib"; \
-		$(RM) $@; \
-		exit 1 ; \
-	    } ; \
-	    for obj in `find $$libname -name '*.o'` ; do \
-		file=`basename $$obj` ; \
-		mv $$obj ./$${libname}_$${file} ; \
-	    done ; \
-	done ; \
-	printf "\n" ; \
-	xcrun -sdk $(JAM_SDK) ar -cruS libboost.a *.o ; \
-	xcrun -sdk $(JAM_SDK) ranlib libboost.a > /dev/null 2>&1
-
-foo$(DERIVED_FILE_DIR)/$(X86_64_ARCH)/$(FRAMEWORKBUNDLE)/lib/libboost.a : 
-	cd $(dir $@) && printf "[$(JAM_ARCH)] extracting... " && \
-	for ar in `find $(dir $@) -name "*.a"` ; do \
-	    boostlib=`basename $$ar` ; \
-	    libname=`echo $$boostlib | sed 's/.*libboost_\([^.]*\).*$$/\1/'` ; \
-	    mkdir $$libname && printf "$$libname " ; \
-	    (cd $$libname && xcrun -sdk $(JAM_SDK) ar -x ../$$boostlib) || { \
-		echo "failed to extract $(dir $@)/$$boostlib"; \
-		$(RM) $@; \
-		exit 1 ; \
-	    } ; \
-	    for obj in `find $$libname -name '*.o'` ; do \
-		file=`basename $$obj` ; \
-		mv $$obj ./$${libname}_$${file} ; \
-	    done ; \
-	    #$(RM) -r $$libname ; \
-	    #$(RM) $$ar ; \
+	    if [ $$boostlib != libboost.a ] ; then \
+		libname=`echo $$boostlib | sed 's/.*libboost_\([^.]*\).*$$/\1/'` ; \
+		mkdir $$libname && printf "$$libname " ; \
+		(cd $$libname && xcrun -sdk $(JAM_SDK) ar -x ../$$boostlib) || { \
+		    echo "failed to extract $(dir $@)/$$boostlib"; \
+		    $(RM) $@; \
+		    exit 1 ; \
+		} ; \
+		for obj in `find $$libname -name '*.o'` ; do \
+		    file=`basename $$obj` ; \
+		    mv $$obj ./$${libname}_$${file} ; \
+		done ; \
+		$(RM) -r $$libname ; \
+	    fi ; \
+	    $(RM) $$ar ; \
 	done ; \
 	printf "\n" ; \
 	xcrun -sdk $(JAM_SDK) ar -cruS libboost.a *.o ; \
 	xcrun -sdk $(JAM_SDK) ranlib libboost.a > /dev/null 2>&1 ; \
-	#$(RM) *.o
+	$(RM) *.o
 
 export Info_plist
 
 Info.plist : Makefile
 	echo -e $$Info_plist > $@
 
-framework-build: $(addprefix $(DERIVED_FILE_DIR)/, $(addsuffix /$(FRAMEWORKBUNDLE)/lib/libboost.a, $(ARCHS))) $(FRAMEWORKBUNDLE).tar.bz2
+framework-build: $(BUILT_LIBS) $(FRAMEWORKBUNDLE).tar.bz2
 
 #
 # The framework-no-build target is used by Jenkins to assemble
@@ -275,11 +263,20 @@ framework-build: $(addprefix $(DERIVED_FILE_DIR)/, $(addsuffix /$(FRAMEWORKBUNDL
 # if it is missing then the build fails as the master has no
 # rules to build it.
 #
-framework-no-build: $(addprefix $(DERIVED_FILE_DIR)/, $(addsuffix /$(FRAMEWORKBUNDLE)/include/boost/config.hpp, $(ARCHS))) $(FRAMEWORKBUNDLE).tar.bz2
+framework-no-build: $(NOBUILD_ARTIFACTS) $(FRAMEWORKBUNDLE).tar.bz2
+
+$(FRAMEWORKBUNDLE).tar.bz2 : $(BUILT_LIBS)
+	$(MAKE) bundle
+	$(RM) -f $(FRAMEWORKBUNDLE).tar.bz2
+	tar -C $(BUILT_PRODUCTS_DIR) -cjf $(FRAMEWORKBUNDLE).tar.bz2 $(FRAMEWORKBUNDLE)
 
 FIRST_ARCH = $(firstword $(ARCHS))
 
-bundle-dirs :
+.PHONY : bundle-dirs bundle-resources bundle-headers bundle-libraries
+
+bundle : bundle-dirs bundle-resources bundle-headers bundle-libraries
+
+bundle-dirs:
 	$(RM) -r $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)
 	mkdir -p $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)
 	mkdir $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions
@@ -300,12 +297,5 @@ bundle-headers : bundle-dirs
 	cp -R $(DERIVED_FILE_DIR)/$(FIRST_ARCH)/$(FRAMEWORKBUNDLE)/include/boost/  $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions/$(FRAMEWORK_VERSION)/Headers/
 
 bundle-libraries : bundle-dirs
-	for arch in $(ARCHS) ; do libs="$$libs $(DERIVED_FILE_DIR)/$$arch/$(FRAMEWORKBUNDLE)/lib/libboost.a" ; done ; \
-	xcrun -sdk iphoneos lipo -create $$libs -o $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions/$(FRAMEWORK_VERSION)/$(FRAMEWORK_NAME)
-
-$(FRAMEWORKBUNDLE) : bundle-dirs bundle-resources bundle-headers bundle-libraries
-
-$(FRAMEWORKBUNDLE).tar.bz2 : $(FRAMEWORKBUNDLE)
-	$(RM) -f $(FRAMEWORKBUNDLE).tar.bz2
-	tar -C $(BUILT_PRODUCTS_DIR) -cjf $(FRAMEWORKBUNDLE).tar.bz2 $(FRAMEWORKBUNDLE)
+	xcrun -sdk iphoneos lipo -create $(BUILT_LIBS) -o $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions/$(FRAMEWORK_VERSION)/$(FRAMEWORK_NAME)
 
