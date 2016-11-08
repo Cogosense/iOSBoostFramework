@@ -24,7 +24,11 @@ SHELL = /bin/bash
 #
 # set minimum iOS version supported
 #
-MIN_IOS_VER = 6.1
+ifneq "$(IPHONEOS_DEPLOYMENT_TARGET)" ""
+    MIN_IOS_VER = $(IPHONEOS_DEPLOYMENT_TARGET)
+else
+    MIN_IOS_VER = 8.0
+endif
 
 #
 # enable bitcode support
