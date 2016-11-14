@@ -1,0 +1,25 @@
+
+Production 4.0.0 created on Sun 13 Nov 2016 00:22:33 PST
+================================================================================
+3318215: steve.williams@telxio.com               : Production release 4.0.0
+21bba7b: steve.williams@telxio.com               : updated project settings to recommended
+b671854: steve.williams@telxio.com               : issue Cogosense/Client/#12 allow minimum iOS version to be set by xcode
+7d37f80: steve.williams@telxio.com               : Accept Xcode license on new install or update
+891e91c: steve.williams@telxio.com               : fix build failure due to type
+569afb9: steve.williams@telxio.com               : store source archive in location common to all variants to save downloads
+b55232a: steve.williams@telxio.com               : make SRCROOT directory before downloading source archive
+cbfe68c: steve.williams@telxio.com               : ignore xcode user data
+ef74206: steve.williams@telxio.com               : Use derived sources directory for downloaded source to prevent build collisions
+733eaf4: steve.williams@telxio.com               : Remove -fvisibility flag to match settings in Xcode, changed C++ standard to c++11
+37e8aae: steve.williams@telxio.com               : output products to BUILT_PRODUCTS_DIR not BUILD_DIR
+8eff915: steve.williams@telxio.com               : support active architecture only builds, move to Makefile for build
+cde0dff: steve.williams@telxio.com               : Remove unnecessary workspace
+43b9256: steve.williams@telxio.com               : add vim temp file
+9974607: steve.williams@telxio.com               : removed stray brace from email message
+6c9f582: steve.williams@telxio.com               : Archive and compress framework artifact
+e4769ee: steve.williams@telxio.com               : Add xcode project
+a5ee83c: steve.williams@telxio.com               : Change invalid arm arch back to armv7
+d9957af: steve.williams@telxio.com               : Add missing path to build.sh
+05cf36a: steve.williams@telxio.com               : Remove extraneous stash step
+bb0e2a6: steve.williams@telxio.com               : Add Jenkinsfile
+e127ffb: steve.williams@telxio.com               : Initial commit
