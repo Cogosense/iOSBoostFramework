@@ -47,7 +47,7 @@ space:= $(empty) $(empty)
 comma:= ,
 
 NAME = boost
-VERSION = 1_58_0
+VERSION = 1_63_0
 TOPDIR = $(CURDIR)
 #
 # ARCHS, BUILT_PRODUCTS_DIR and BUILDROOT are set by xcode
@@ -75,7 +75,7 @@ X86_64_ARCH = x86_64
 FRAMEWORK_VERSION = A
 FRAMEWORK_NAME = boost
 FRAMEWORKBUNDLE = $(FRAMEWORK_NAME).framework
-DOWNLOAD_URL = http://sourceforge.net/projects/boost/files/boost/1.58.0/$(TARBALL)
+DOWNLOAD_URL = http://sourceforge.net/projects/boost/files/boost/1.63.0/$(TARBALL)
 
 #
 # Files used to trigger builds for each architecture
