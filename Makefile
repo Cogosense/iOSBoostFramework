@@ -22,6 +22,11 @@
 SHELL = /bin/bash
 
 #
+# set or unset warning flags
+#
+WFLAGS = -Wall -pedantic -Wno-unused-variable
+
+#
 # set minimum iOS version supported
 #
 ifneq "$(IPHONEOS_DEPLOYMENT_TARGET)" ""
@@ -191,7 +196,7 @@ $(BUILDROOT)/user-config-$(I386_ARCH).jam \
 $(BUILDROOT)/user-config-$(X86_64_ARCH).jam : $(SRCDIR)/b2
 	    echo using clang : $(JAM_ARCH) > $@
 	    echo "    : xcrun --sdk $(JAM_SDK) clang++" >> $@
-	    echo "    : <cxxflags>\"-miphoneos-version-min=$(MIN_IOS_VER) $(XCODE_BITCODE_FLAG) -arch $(JAM_ARCH) $(EXTRA_CPPFLAGS) $(JAM_DEFINES)\"" >> $@
+	    echo "    : <cxxflags>\"-miphoneos-version-min=$(MIN_IOS_VER) $(XCODE_BITCODE_FLAG) -arch $(JAM_ARCH) $(EXTRA_CPPFLAGS) $(JAM_DEFINES) $(WFLAGS)\"" >> $@
 	    echo "      <striper>" >> $@
 	    echo "    ;" >> $@
 
@@ -232,7 +237,7 @@ $(BUILDROOT)/$(X86_64_ARCH)/$(INSTALLED_BUILD_LIB) :
 	installdir="$(BUILDROOT)/$(JAM_ARCH)/$(FRAMEWORKBUNDLE)" ; \
 	cd $(SRCDIR) && \
 	BOOST_BUILD_USER_CONFIG=$(BUILDROOT)/user-config-$(JAM_ARCH).jam \
-	./b2 --build-dir="$$builddir" --prefix="$$installdir" toolset=clang-darwin-$(JAM_ARCH) link=static install && \
+	./b2 --build-dir="$$builddir" --prefix="$$installdir" toolset=clang-darwin-$(JAM_ARCH) warnings=off link=static install && \
 	cd $$installdir/lib && printf "[$(JAM_ARCH)] extracting... " && \
 	for ar in `find . -name "*.a"` ; do \
 	    boostlib=`basename $$ar` ; \
