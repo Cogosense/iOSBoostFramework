@@ -23,3 +23,10 @@ d9957af: steve.williams@telxio.com               : Add missing path to build.sh
 05cf36a: steve.williams@telxio.com               : Remove extraneous stash step
 bb0e2a6: steve.williams@telxio.com               : Add Jenkinsfile
 e127ffb: steve.williams@telxio.com               : Initial commit
+
+Production 4.2.0 created on Fri 20 Jan 2017 18:07:59 PST
+================================================================================
+e04b96d: steve.williams@telxio.com               : fix compile warnings, turn of bjam warnings then supply warning flags in cxxflags
+e94efeb: steve.williams@telxio.com               : increase boost version from 1.58 to 1.63
+d273cda: steve.williams@telxio.com               : add CHANGELOG
+c3ad817: steve.williams@telxio.com               : Development started for 4.1.0_dev
