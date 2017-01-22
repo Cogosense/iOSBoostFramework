@@ -45,7 +45,7 @@ node('osx && ios') {
         sh 'env -u PWD -u HOME -u PATH -u \'BASH_FUNC_copy_reference_file()\' > SCM/build.env'
 
         stage 'Notify Build Started'
-        if(contributors && contributors != '') {
+        if(contributors && contributors != '' && env.JENKINS_ENV == 'PRD') {
             mail subject: "Jenkins Build Started: (${env.JOB_NAME})",
                 body: "You are on the hook.\nFor more information: ${env.JOB_URL}",
                 to: contributors,
@@ -93,16 +93,18 @@ node('osx && ios') {
 
     } catch(err) {
         currentBuild.result = "FAILURE"
-        mail subject: "Jenkins Build Failed: (${env.JOB_NAME})",
-            body: "Project build error ${err}.\nFor more information: ${env.BUILD_URL}",
-            to: contributors ? contributors : '',
-            bcc: 'swilliams@cogosense.com',
-            from: 'support@cogosense.com'
+        if(env.JENKINS_ENV == 'PRD') {
+            mail subject: "Jenkins Build Failed: (${env.JOB_NAME})",
+                body: "Project build error ${err}.\nFor more information: ${env.BUILD_URL}",
+                to: contributors ? contributors : '',
+                bcc: 'swilliams@cogosense.com',
+                from: 'support@cogosense.com'
+        }
         throw err
     }
 
     stage 'Notify Build Completion'
-    if(contributors && contributors != '') {
+    if(contributors && contributors != '' && env.JENKINS_ENV == 'PRD') {
         mail subject: "Jenkins Build Completed Successfully: (${env.JOB_NAME})",
             body: "You are off the hook.\nFor more information: ${env.BUILD_URL}",
             to: contributors,
