@@ -51,6 +51,14 @@ node('osx && ios') {
                 to: contributors,
                 from: 'support@cogosense.com'
         }
+        else {
+            if(env.JENKINS_ENV == 'PRD') {
+                echo "No email sent because no contributors found"
+            }
+            else {
+                echo "Not a production build server: no email sent: contributors are: ${contributors}"
+            }
+        }
 
         stash name: 'Makefile', includes: 'Makefile'
 
