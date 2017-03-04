@@ -282,7 +282,7 @@ framework-build: $(BUILT_LIBS) $(FRAMEWORKBUNDLE).tar.bz2
 #
 framework-no-build: $(NOBUILD_ARTIFACTS) $(FRAMEWORKBUNDLE).tar.bz2
 
-$(FRAMEWORKBUNDLE).tar.bz2 : $(BUILT_LIBS)
+$(FRAMEWORKBUNDLE).tar.bz2 :
 	$(MAKE) bundle
 	$(RM) -f $(FRAMEWORKBUNDLE).tar.bz2
 	tar -C $(BUILT_PRODUCTS_DIR) -cjf $(FRAMEWORKBUNDLE).tar.bz2 $(FRAMEWORKBUNDLE)
