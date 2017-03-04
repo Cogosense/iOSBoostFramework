@@ -7,125 +7,112 @@ properties properties: [
 
 node('osx && ios') {
     def contributors = null
+    def Utils
+    def buildLabel
     currentBuild.result = "SUCCESS"
 
-    // Accept the license on first install and updates
-    acceptXcodeLicense()
+    stage ('Checkout Source') {
+        checkout scm
+        getUtils()
+        // load pipeline utility functions
+        Utils = load "utils/Utils.groovy"
+        buildLabel = Utils.&getBuildLabel()
+    }
 
-    // clean workspace
-    deleteDir()
-    try {
+    stage ('Create Change Logs') {
         sshagent(['38bf8b09-9e52-421a-a8ed-5280fcb921af']) {
-            stage 'Checkout Source'
-            checkout scm
-
-            stage name: 'Create Change Logs', concurrency: 1
-
-            // Load the SCM util scripts first
-            checkout([$class: 'GitSCM',
-                branches: [[name: '*/master']],
-                doGenerateSubmoduleConfigurations: false,
-                extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'utils']],
-                submoduleCfg: [],
-                userRemoteConfigs: [[url: 'git@github.com:Cogosense/JenkinsUtils.git', credentialsId: '38bf8b09-9e52-421a-a8ed-5280fcb921af']]])
-
             dir('./SCM') {
                 sh '../utils/scmBuildDate > TIMESTAMP'
-                sh '../utils/scmBuildTag > TAG'
+                writeFile file: "TAG", text: buildLabel
+                writeFile file: "URL", text: env.BUILD_URL
+                writeFile file: "BRANCH", text: env.BRANCH_NAME
                 sh '../utils/scmBuildContributors > CONTRIBUTORS'
                 sh '../utils/scmBuildOnHookEmail > ONHOOK_EMAIL'
                 sh '../utils/scmCreateChangeLogs -o CHANGELOG'
                 sh '../utils/scmTagLastBuild'
             }
         }
+    }
 
+    try {
         contributors = readFile './SCM/ONHOOK_EMAIL'
 
-        stage 'Capture Build Environment'
-        sh 'env -u PWD -u HOME -u PATH -u \'BASH_FUNC_copy_reference_file()\' > SCM/build.env'
-
-        stage 'Notify Build Started'
-        if(contributors && contributors != '' && env.JENKINS_ENV == 'PRD') {
-            mail subject: "Jenkins Build Started: (${env.JOB_NAME})",
-                body: "You are on the hook.\nFor more information: ${env.JOB_URL}",
-                to: contributors,
-                from: 'support@cogosense.com'
-        }
-        else {
-            if(env.JENKINS_ENV == 'PRD') {
-                echo "No email sent because no contributors found"
-            }
-            else {
-                echo "Not a production build server: no email sent: contributors are: ${contributors}"
-            }
+        stage ('Capture Build Environment') {
+            sh 'env -u PWD -u HOME -u PATH -u \'BASH_FUNC_copy_reference_file()\' > SCM/build.env'
         }
 
-        stash name: 'Makefile', includes: 'Makefile'
+        stage ('Notify Build Started') {
+            Utils.&sendOnHookEmail(contributors)
+        }
 
-        stage 'Build Parallel'
-        parallel (
-            "armv7" : {
-                node('osx && ios') {
-                    // clean workspace
-                    deleteDir()
-                    unstash 'Makefile'
-                    sh 'make clean'
-                    sh 'make ARCHS=armv7'
-                    stash name: 'armv7', includes: '**/armv7/boost.framework/**'
+        stage ('Build Parallel') {
+            stash name: 'Makefile', includes: 'Makefile'
+            parallel (
+                "armv7" : {
+                    node('osx && ios') {
+                        // Accept the license on first install and updates
+                        Utils.&acceptXcodeLicense()
+                        // clean workspace
+                        deleteDir()
+                        unstash 'Makefile'
+                        sh 'make clean'
+                        sh 'make ARCHS=armv7'
+                        stash name: 'armv7', includes: '**/armv7/boost.framework/**'
+                    }
+                },
+                "arm64" : {
+                    node('osx && ios') {
+                        // Accept the license on first install and updates
+                        Utils.&acceptXcodeLicense()
+                        // clean workspace
+                        deleteDir()
+                        unstash 'Makefile'
+                        sh 'make clean'
+                        sh 'make ARCHS=arm64'
+                        stash name: 'arm64', includes: '**/arm64/boost.framework/**'
+                    }
                 }
-            },
-            "arm64" : {
-                node('osx && ios') {
-                    // clean workspace
-                    deleteDir()
-                    unstash 'Makefile'
-                    sh 'make clean'
-                    sh 'make ARCHS=arm64'
-                    stash name: 'arm64', includes: '**/arm64/boost.framework/**'
-                }
+            )
+        }
+
+        stage ('Assemble Framework') {
+            unstash 'armv7'
+            unstash 'arm64'
+            // Accept the license on first install and updates
+            Utils.&acceptXcodeLicense()
+            sh 'make ARCHS="armv7 arm64" framework-no-build'
+        }
+
+        stage ('Archive Artifacts') {
+            // Archive the SCM logs, the framework directory
+            step([$class: 'ArtifactArchiver',
+                artifacts: 'SCM/**, boost.framework.tar.bz2',
+                fingerprint: true,
+                onlyIfSuccessful: true])
+        }
+
+        stage ('Tag Build') {
+            sshagent(['38bf8b09-9e52-421a-a8ed-5280fcb921af']) {
+                sh "utils/scmTagBuild ${buildLabel}"
             }
-        )
-
-        unstash 'armv7'
-        unstash 'arm64'
-
-        stage 'Assemble Framework'
-        sh 'make ARCHS="armv7 arm64" framework-no-build'
-
-        stage 'Archive Artifacts'
-        // Archive the SCM logs, the framework directory
-        step([$class: 'ArtifactArchiver',
-            artifacts: 'SCM/**, boost.framework.tar.bz2',
-            fingerprint: true,
-            onlyIfSuccessful: true])
-
+        }
     } catch(err) {
         currentBuild.result = "FAILURE"
-        if(env.JENKINS_ENV == 'PRD') {
-            mail subject: "Jenkins Build Failed: (${env.JOB_NAME})",
-                body: "Project build error ${err}.\nFor more information: ${env.BUILD_URL}",
-                to: contributors ? contributors : '',
-                bcc: 'swilliams@cogosense.com',
-                from: 'support@cogosense.com'
-        }
+        Utils.&sendFailureEmail(contributors, err)
         throw err
     }
 
-    stage 'Notify Build Completion'
-    if(contributors && contributors != '' && env.JENKINS_ENV == 'PRD') {
-        mail subject: "Jenkins Build Completed Successfully: (${env.JOB_NAME})",
-            body: "You are off the hook.\nFor more information: ${env.BUILD_URL}",
-            to: contributors,
-            from: 'support@cogosense.com'
+    stage ('Notify Build Completion') {
+        Utils.&sendOffHookEmail(contributors)
     }
 }
 
-def acceptXcodeLicense() {
-    withCredentials([[
-                $class: 'UsernamePasswordMultiBinding',
-                credentialsId: 'ab72d29c-1cd1-4f78-a6fa-603db58bcaf3',
-                usernameVariable: 'USERNAME',
-                passwordVariable: 'PASSWORD']]) {
-        sh 'echo $PASSWORD | sudo -S xcodebuild -license accept'
-    }
+def getUtils() {
+    // Load the SCM util scripts first
+    checkout([$class: 'GitSCM',
+        branches: [[name: "*/${env.BRANCH_NAME}"]],
+        doGenerateSubmoduleConfigurations: false,
+        extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'utils']],
+        submoduleCfg: [],
+        userRemoteConfigs: [[url: 'git@github.com:Cogosense/JenkinsUtils.git', credentialsId: '38bf8b09-9e52-421a-a8ed-5280fcb921af']]])
 }
