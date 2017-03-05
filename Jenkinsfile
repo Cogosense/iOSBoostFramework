@@ -12,6 +12,7 @@ node('osx && ios') {
     currentBuild.result = "SUCCESS"
 
     stage ('Checkout Source') {
+        deleteDir()
         checkout scm
         getUtils()
         // load pipeline utility functions
