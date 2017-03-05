@@ -21,6 +21,11 @@ node('osx && ios') {
 
     stage ('Create Change Logs') {
         sshagent(['38bf8b09-9e52-421a-a8ed-5280fcb921af']) {
+            try {
+                Utils.&copyArtifactWhenAvailable("Cogosense/iOSBoostFramework/${env.BRANCH_NAME}", 'SCM/CHANGELOG', 1, 0)
+            }
+            catch(err) {}
+
             dir('./SCM') {
                 sh '../utils/scmBuildDate > TIMESTAMP'
                 writeFile file: "TAG", text: buildLabel
@@ -28,7 +33,7 @@ node('osx && ios') {
                 writeFile file: "BRANCH", text: env.BRANCH_NAME
                 sh '../utils/scmBuildContributors > CONTRIBUTORS'
                 sh '../utils/scmBuildOnHookEmail > ONHOOK_EMAIL'
-                sh '../utils/scmCreateChangeLogs -o CHANGELOG'
+                sh "../utils/scmUpdateChangeLog -t ${buildLabel} -o CHANGELOG"
                 sh '../utils/scmTagLastBuild'
             }
         }
