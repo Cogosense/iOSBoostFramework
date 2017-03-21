@@ -30,3 +30,12 @@ e04b96d: steve.williams@telxio.com               : fix compile warnings, turn of
 e94efeb: steve.williams@telxio.com               : increase boost version from 1.58 to 1.63
 d273cda: steve.williams@telxio.com               : add CHANGELOG
 c3ad817: steve.williams@telxio.com               : Development started for 4.1.0_dev
+
+Production 4.3.0 created on Tue 21 Mar 2017 16:33:41 PDT
+================================================================================
+1c2e236: steve.williams@telxio.com               : clean workspace before checkout
+ac3d9a9: steve.williams@telxio.com               : simplify changelog generation
+0f1a117: steve.williams@telxio.com               : updated to use common pipeline Utils methods
+0a8b8ab: steve.williams@telxio.com               : remove dependency of BUILT_LIBS on framework.tar.bz2 - it causes library to be rebuilt when using target framework-no-build
+acc4018: steve.williams@telxio.com               : fix empty email stage problem in DEV by echoing message
+2059a21: steve.williams@telxio.com               : only send build email in production
