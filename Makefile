@@ -267,7 +267,30 @@ export Info_plist
 Info.plist : Makefile
 	echo -e $$Info_plist > $@
 
-framework-build: $(BUILT_LIBS) $(FRAMEWORKBUNDLE).tar.bz2
+.PHONY : framework-archs-cmp
+framework-archs-cmp :
+	@found='no' ; \
+	if [ -f "$(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/$(FRAMEWORK_NAME)" ] ; then \
+		archs=`lipo -info "$(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/$(FRAMEWORK_NAME)" | awk -F: '{print $$3}'` ; \
+		for archReq in $(ARCHS) ; do \
+			for archHave in $$archs ; do \
+				if [ $$archReq == $$archHave ] ; then \
+					found='yes' ; \
+					break ; \
+				fi ; \
+			done ; \
+			if [ $$found == 'no' ] ; then \
+				break ; \
+			fi ; \
+		done ; \
+	fi ; \
+	if [ $$found == 'no' ] ; then \
+		$(RM) $(FRAMEWORKBUNDLE).tar.bz2 ; \
+		echo "rebuilding $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE) for $(ARCHS)" ; \
+	fi
+
+framework-build: FRAMEWORKBUNDLE_DEPS = $(BUILT_LIBS)
+framework-build: framework-archs-cmp $(BUILT_LIBS) $(FRAMEWORKBUNDLE).tar.bz2
 
 #
 # The framework-no-build target is used by Jenkins to assemble
@@ -280,11 +303,12 @@ framework-build: $(BUILT_LIBS) $(FRAMEWORKBUNDLE).tar.bz2
 # if it is missing then the build fails as the master has no
 # rules to build it.
 #
-framework-no-build: $(NOBUILD_ARTIFACTS) $(FRAMEWORKBUNDLE).tar.bz2
+framework-no-build: FRAMEWORKBUNDLE_DEPS = $(NOBUILD_ARTIFACTS)
+framework-no-build: framework-archs-cmp $(NOBUILD_ARTIFACTS) $(FRAMEWORKBUNDLE).tar.bz2
 
-$(FRAMEWORKBUNDLE).tar.bz2 :
+$(FRAMEWORKBUNDLE).tar.bz2 : $(FRAMEWORKBUNDLE_DEPS)
 	$(MAKE) bundle
-	$(RM) -f $(FRAMEWORKBUNDLE).tar.bz2
+	$(RM) $(FRAMEWORKBUNDLE).tar.bz2
 	tar -C $(BUILT_PRODUCTS_DIR) -cjf $(FRAMEWORKBUNDLE).tar.bz2 $(FRAMEWORKBUNDLE)
 
 FIRST_ARCH = $(firstword $(ARCHS))
@@ -294,24 +318,23 @@ FIRST_ARCH = $(firstword $(ARCHS))
 bundle : bundle-dirs bundle-resources bundle-headers bundle-libraries
 
 bundle-dirs:
-	$(RM) -r $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)
 	mkdir -p $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)
-	mkdir $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions
-	mkdir $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions/$(FRAMEWORK_VERSION)
-	mkdir $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions/$(FRAMEWORK_VERSION)/Resources
-	mkdir $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions/$(FRAMEWORK_VERSION)/Headers
-	mkdir $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions/$(FRAMEWORK_VERSION)/Documentation
-	ln -s $(FRAMEWORK_VERSION) $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions/Current
-	ln -s Versions/Current/Headers $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Headers
-	ln -s Versions/Current/Resources $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Resources
-	ln -s Versions/Current/Documentation $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Documentation
-	ln -s Versions/Current/$(FRAMEWORK_NAME) $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/$(FRAMEWORK_NAME)
+	mkdir -p $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions
+	mkdir -p $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions/$(FRAMEWORK_VERSION)
+	mkdir -p $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions/$(FRAMEWORK_VERSION)/Resources
+	mkdir -p $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions/$(FRAMEWORK_VERSION)/Headers
+	mkdir -p $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions/$(FRAMEWORK_VERSION)/Documentation
+	ln -sf $(FRAMEWORK_VERSION) $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions/Current
+	ln -sf Versions/Current/Headers $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Headers
+	ln -sf Versions/Current/Resources $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Resources
+	ln -sf Versions/Current/Documentation $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Documentation
+	ln -sf Versions/Current/$(FRAMEWORK_NAME) $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/$(FRAMEWORK_NAME)
 
 bundle-resources : Info.plist bundle-dirs
 	cp Info.plist $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions/$(FRAMEWORK_VERSION)/Resources/
 
 bundle-headers : bundle-dirs
-	cp -R $(BUILDROOT)/$(FIRST_ARCH)/$(FRAMEWORKBUNDLE)/include/boost/  $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions/$(FRAMEWORK_VERSION)/Headers/
+	cp -a $(BUILDROOT)/$(FIRST_ARCH)/$(FRAMEWORKBUNDLE)/include/boost/  $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions/$(FRAMEWORK_VERSION)/Headers/
 
 bundle-libraries : bundle-dirs
 	xcrun -sdk iphoneos lipo -create $(BUILT_LIBS) -o $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions/$(FRAMEWORK_VERSION)/$(FRAMEWORK_NAME)
