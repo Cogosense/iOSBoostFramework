@@ -52,7 +52,8 @@ space:= $(empty) $(empty)
 comma:= ,
 
 NAME = boost
-VERSION = 1_63_0
+VERSION = 1_64_0
+VERSIONDIR = $(subst _,.,$(VERSION))
 TOPDIR = $(CURDIR)
 #
 # ARCHS, BUILT_PRODUCTS_DIR and BUILDROOT are set by xcode
@@ -80,7 +81,7 @@ X86_64_ARCH = x86_64
 FRAMEWORK_VERSION = A
 FRAMEWORK_NAME = boost
 FRAMEWORKBUNDLE = $(FRAMEWORK_NAME).framework
-DOWNLOAD_URL = http://sourceforge.net/projects/boost/files/boost/1.63.0/$(TARBALL)
+DOWNLOAD_URL = http://sourceforge.net/projects/boost/files/boost/$(VERSIONDIR)/$(TARBALL)
 
 #
 # Files used to trigger builds for each architecture
@@ -104,7 +105,8 @@ NOBUILD_ARTIFACTS = $(addprefix $(BUILDROOT)/, $(addsuffix /$(INSTALLED_NOBUILD_
 # (if -fvisibility=hidden is specified, then -fvisibility-inlines-hidden is unnecessary as inlines are already hidden)
 #
 EXTRA_CPPFLAGS = -DBOOST_AC_USE_PTHREADS -DBOOST_SP_USE_PTHREADS -stdlib=libc++ -std=c++11
-BOOST_LIBS = test thread atomic signals filesystem regex program_options system date_time serialization exception random
+BOOST_LIBS = test thread atomic signals filesystem regex program_options system date_time serialization exception random locale
+BJAM_OPTIONS = boost.locale.icu=off
 
 define Info_plist
 <?xml version="1.0" encoding="UTF-8"?>\n
@@ -237,7 +239,7 @@ $(BUILDROOT)/$(X86_64_ARCH)/$(INSTALLED_BUILD_LIB) :
 	installdir="$(BUILDROOT)/$(JAM_ARCH)/$(FRAMEWORKBUNDLE)" ; \
 	cd $(SRCDIR) && \
 	BOOST_BUILD_USER_CONFIG=$(BUILDROOT)/user-config-$(JAM_ARCH).jam \
-	./b2 --build-dir="$$builddir" --prefix="$$installdir" toolset=clang-darwin-$(JAM_ARCH) warnings=off link=static install && \
+	./b2 --build-dir="$$builddir" --prefix="$$installdir" toolset=clang-darwin-$(JAM_ARCH) warnings=off link=static $(BJAM_OPTIONS) install && \
 	cd $$installdir/lib && printf "[$(JAM_ARCH)] extracting... " && \
 	for ar in `find . -name "*.a"` ; do \
 	    boostlib=`basename $$ar` ; \
