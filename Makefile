@@ -52,7 +52,7 @@ space:= $(empty) $(empty)
 comma:= ,
 
 NAME = boost
-VERSION = 1_63_0
+VERSION = 1_64_0
 VERSIONDIR = $(subst _,.,$(VERSION))
 TOPDIR = $(CURDIR)
 #
