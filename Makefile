@@ -55,6 +55,8 @@ NAME = boost
 VERSION = 1_64_0
 VERSIONDIR = $(subst _,.,$(VERSION))
 TOPDIR = $(CURDIR)
+IPHONEOS_SDK_ROOT := $(shell xcrun --sdk iphoneos --show-sdk-platform-path)
+IPHONESIMULATOR_SDK_ROOT := $(shell xcrun --sdk iphonesimulator --show-sdk-platform-path)
 #
 # ARCHS, BUILT_PRODUCTS_DIR and BUILDROOT are set by xcode
 # only set them if make is invoked directly
@@ -106,7 +108,7 @@ NOBUILD_ARTIFACTS = $(addprefix $(BUILDROOT)/, $(addsuffix /$(INSTALLED_NOBUILD_
 #
 EXTRA_CPPFLAGS = -DBOOST_AC_USE_PTHREADS -DBOOST_SP_USE_PTHREADS -stdlib=libc++ -std=c++11
 BOOST_LIBS = test thread atomic signals filesystem regex program_options system date_time serialization exception random locale
-BJAM_OPTIONS = boost.locale.icu=off
+JAM_PROPERTIES = 
 
 define Info_plist
 <?xml version="1.0" encoding="UTF-8"?>\n
@@ -196,9 +198,10 @@ $(BUILDROOT)/user-config-$(ARM_V7S_ARCH).jam \
 $(BUILDROOT)/user-config-$(ARM_64_ARCH).jam \
 $(BUILDROOT)/user-config-$(I386_ARCH).jam \
 $(BUILDROOT)/user-config-$(X86_64_ARCH).jam : $(SRCDIR)/b2
-	    echo using clang : $(JAM_ARCH) > $@
+	    echo using clang-darwin : $(TOOLCHAIN_ARCH) > $@
 	    echo "    : xcrun --sdk $(JAM_SDK) clang++" >> $@
 	    echo "    : <cxxflags>\"-miphoneos-version-min=$(MIN_IOS_VER) $(XCODE_BITCODE_FLAG) -arch $(JAM_ARCH) $(EXTRA_CPPFLAGS) $(JAM_DEFINES) $(WFLAGS)\"" >> $@
+	    echo "      <linkflags>\"-arch $(JAM_ARCH)\"" >> $@
 	    echo "      <striper>" >> $@
 	    echo "    ;" >> $@
 
@@ -213,22 +216,32 @@ $(BUILDROOT)/$(I386_ARCH)/$(INSTALLED_BUILD_LIB) : $(BUILDROOT)/$(I386_ARCH) $(B
 $(BUILDROOT)/$(X86_64_ARCH)/$(INSTALLED_BUILD_LIB) : $(BUILDROOT)/$(X86_64_ARCH) $(BUILDROOT)/user-config-$(X86_64_ARCH).jam
 
 $(BUILDROOT)/$(ARM_V7_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_SDK = iphoneos
+$(BUILDROOT)/$(ARM_V7_ARCH)/$(INSTALLED_BUILD_LIB) : TOOLCHAIN_ARCH = arm
 $(BUILDROOT)/$(ARM_V7_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_ARCH = $(ARM_V7_ARCH)
 $(BUILDROOT)/$(ARM_V7_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_DEFINES = -D_LITTLE_ENDIAN
+$(BUILDROOT)/$(ARM_V7_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_OPTIONS = -sICONV_PATH=$(IPHONEOS_SDK_ROOT)/Developer/SDKs/iPhoneOS.sdk/usr
 
 $(BUILDROOT)/$(ARM_V7S_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_SDK = iphoneos
+$(BUILDROOT)/$(ARM_V7S_ARCH)/$(INSTALLED_BUILD_LIB) : TOOLCHAIN_ARCH = arm
 $(BUILDROOT)/$(ARM_V7S_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_ARCH = $(ARM_V7S_ARCH)
 $(BUILDROOT)/$(ARM_V7S_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_DEFINES = -D_LITTLE_ENDIAN
+$(BUILDROOT)/$(ARM_V7S_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_OPTIONS = -sICONV_PATH=$(IPHONEOS_SDK_ROOT)/Developer/SDKs/iPhoneOS.sdk/usr
 
 $(BUILDROOT)/$(ARM_64_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_SDK = iphoneos
+$(BUILDROOT)/$(ARM_64_ARCH)/$(INSTALLED_BUILD_LIB) : TOOLCHAIN_ARCH = arm64
 $(BUILDROOT)/$(ARM_64_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_ARCH = $(ARM_64_ARCH)
 $(BUILDROOT)/$(ARM_64_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_DEFINES = -D_LITTLE_ENDIAN
+$(BUILDROOT)/$(ARM_64_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_OPTIONS = -sICONV_PATH=$(IPHONEOS_SDK_ROOT)/Developer/SDKs/iPhoneOS.sdk/usr
 
 $(BUILDROOT)/$(I386_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_SDK = iphonesimulator
+$(BUILDROOT)/$(I386_ARCH)/$(INSTALLED_BUILD_LIB) : TOOLCHAIN_ARCH = x86
 $(BUILDROOT)/$(I386_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_ARCH = $(I386_ARCH)
+$(BUILDROOT)/$(I386_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_OPTIONS = -sICONV_PATH=$(IPHONESIMULATOR_SDK_ROOT)/Developer/SDKs/iPhoneSimulator.sdk/usr
 
 $(BUILDROOT)/$(X86_64_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_SDK = iphonesimulator
+$(BUILDROOT)/$(X86_64_ARCH)/$(INSTALLED_BUILD_LIB) : TOOLCHAIN_ARCH = x86_64
 $(BUILDROOT)/$(X86_64_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_ARCH = $(X86_64_ARCH)
+$(BUILDROOT)/$(X86_64_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_OPTIONS = -sICONV_PATH=$(IPHONESIMULATOR_SDK_ROOT)/Developer/SDKs/iPhoneSimulator.sdk/usr
 
 $(BUILDROOT)/$(ARM_V7_ARCH)/$(INSTALLED_BUILD_LIB) \
 $(BUILDROOT)/$(ARM_V7S_ARCH)/$(INSTALLED_BUILD_LIB) \
@@ -239,7 +252,7 @@ $(BUILDROOT)/$(X86_64_ARCH)/$(INSTALLED_BUILD_LIB) :
 	installdir="$(BUILDROOT)/$(JAM_ARCH)/$(FRAMEWORKBUNDLE)" ; \
 	cd $(SRCDIR) && \
 	BOOST_BUILD_USER_CONFIG=$(BUILDROOT)/user-config-$(JAM_ARCH).jam \
-	./b2 --build-dir="$$builddir" --prefix="$$installdir" toolset=clang-darwin-$(JAM_ARCH) warnings=off link=static $(BJAM_OPTIONS) install && \
+	./b2 --build-dir="$$builddir" --prefix="$$installdir" $(JAM_OPTIONS) toolset=clang-darwin-$(TOOLCHAIN_ARCH) target-os=iphone warnings=off link=static $(JAM_PROPERTIES) install && \
 	cd $$installdir/lib && printf "[$(JAM_ARCH)] extracting... " && \
 	for ar in `find . -name "*.a"` ; do \
 	    boostlib=`basename $$ar` ; \
