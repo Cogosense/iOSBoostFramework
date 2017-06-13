@@ -135,7 +135,7 @@ endef
 
 .PHONY: framework-build
 
-all : framework-build
+all install : framework-build
 
 distclean : clean
 	$(RM) $(PROJECT_TEMP_DIR)/$(TARBALL)

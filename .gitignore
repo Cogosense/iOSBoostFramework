@@ -6,3 +6,4 @@ Info.plist
 ios
 build/
 **/xcuserdata
+DerivedData/
