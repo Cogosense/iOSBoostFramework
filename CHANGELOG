@@ -39,3 +39,16 @@ ac3d9a9: steve.williams@telxio.com               : simplify changelog generation
 0a8b8ab: steve.williams@telxio.com               : remove dependency of BUILT_LIBS on framework.tar.bz2 - it causes library to be rebuilt when using target framework-no-build
 acc4018: steve.williams@telxio.com               : fix empty email stage problem in DEV by echoing message
 2059a21: steve.williams@telxio.com               : only send build email in production
+
+Production 4.4.0 created on Mon 12 Feb 2018 17:20:32 PST
+================================================================================
+22ab54d: steve.williams@telxio.com               : update build settings to recommended for xcode9
+e1bc669: steve.williams@telxio.com               : add patches directory to stash copied to slave
+4c7706e: steve.williams@telxio.com               : issue #5 turn on bitcode in Jenkinsfile
+d111724: steve.williams@telxio.com               : issue #5 turn on bitcode in project file
+2731f6e: steve.williams@telxio.com               : removed log file
+051068d: steve.williams@telxio.com               : issue #4 set tool set correctly and use ICONV_PATH to locate libiconv
+ea769f5: steve.williams@telxio.com               : Merge branch '4.3.0'
+c62199e: steve.williams@telxio.com               : issue #2 upgrade to boost 1_64_0
+8f7e5c9: steve.williams@telxio.com               : issue #3 add locale
+1e4015a: steve.williams@telxio.com               : rebuild fat archive if requested ARCHS changes
