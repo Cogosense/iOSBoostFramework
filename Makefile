@@ -328,9 +328,21 @@ $(FRAMEWORKBUNDLE).tar.bz2 : $(FRAMEWORKBUNDLE_DEPS)
 
 FIRST_ARCH = $(firstword $(ARCHS))
 
-.PHONY : bundle-dirs bundle-resources bundle-headers bundle-libraries
+.PHONY : bundle-dirs bundle-resources bundle-headers bundle-libraries system-framework-dirs
 
-bundle : bundle-dirs bundle-resources bundle-headers bundle-libraries
+bundle : bundle-dirs bundle-resources bundle-headers bundle-libraries system-framework-dirs
+
+#
+# This directory should be added to SYSTEM_FRAMEWORK_SEARCH_PATHS in dependent
+# projects to suppress the generation of warnings from the framework.
+#
+# This framework can also be found using FRAMEWORK_SEARCH_PATHS, so ensure the
+# SYSTEM version is in the compiler command line before the USER version
+#
+system-framework-dirs :
+	mkdir -p $(BUILT_PRODUCTS_DIR)/System
+	ln -sf ../$(FRAMEWORKBUNDLE)  $(BUILT_PRODUCTS_DIR)/System/$(FRAMEWORKBUNDLE)
+
 
 bundle-dirs:
 	mkdir -p $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)
