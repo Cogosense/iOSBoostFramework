@@ -183,6 +183,7 @@ $(SRCDIR)/bootstrap.sh : $(PROJECT_TEMP_DIR)/$(TARBALL)
 $(SRCDIR)/b2 : $(SRCDIR)/bootstrap.sh
 	unset IPHONEOS_DEPLOYMENT_TARGET ;\
 	unset SDKROOT ;\
+	export PATH=usr/local/bin:/usr/bin:/bin ; \
 	cd $(SRCDIR) && ./bootstrap.sh --with-libraries=$(subst $(space),$(comma),$(BOOST_LIBS))
 
 
