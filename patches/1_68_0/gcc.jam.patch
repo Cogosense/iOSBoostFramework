@@ -1,0 +1,26 @@
+diff -ru boost_1_68_0/tools/build/src/tools/gcc.jam boost_1_68_0.patched/tools/build/src/tools/gcc.jam
+--- boost_1_68_0/tools/build/src/tools/gcc.jam	2018-08-01 13:50:55.000000000 -0700
++++ boost_1_68_0.patched/tools/build/src/tools/gcc.jam	2018-10-19 15:51:06.000000000 -0700
+@@ -925,9 +925,8 @@
+     toolset.flags gcc.link RPATH <target-os>$(generic-os) : <dll-path> ;
+     toolset.flags gcc.link RPATH_OPTION <target-os>$(generic-os) : -rpath ;
+     toolset.flags gcc.link RPATH_LINK <target-os>$(generic-os) : <xdll-path> ;
+-    toolset.flags gcc.link START-GROUP <target-os>$(generic-os) :
+-        -Wl,--start-group ;
+-    toolset.flags gcc.link END-GROUP <target-os>$(generic-os) : -Wl,--end-group ;
++    toolset.flags gcc.link START-GROUP <target-os>$(generic-os) : ;
++    toolset.flags gcc.link END-GROUP <target-os>$(generic-os) : ;
+ 
+     # gnu ld has the ability to change the search behaviour for libraries
+     # referenced by the -l switch. These modifiers are -Bstatic and
+@@ -962,8 +961,8 @@
+     # search patterns!
+ 
+     # On *nix mixing shared libs with static runtime is not a good idea.
+-    toolset.flags gcc.link FINDLIBS-ST-PFX <target-os>$(generic-os)/<runtime-link>shared : -Wl,-Bstatic ;
+-    toolset.flags gcc.link FINDLIBS-SA-PFX <target-os>$(generic-os)/<runtime-link>shared : -Wl,-Bdynamic ;
++    toolset.flags gcc.link FINDLIBS-ST-PFX <target-os>$(generic-os)/<runtime-link>shared :  ;
++    toolset.flags gcc.link FINDLIBS-SA-PFX <target-os>$(generic-os)/<runtime-link>shared :  ;
+ 
+     # On windows allow mixing of static and dynamic libs with static
+     # runtime is not a good idea.

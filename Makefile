@@ -52,7 +52,7 @@ space:= $(empty) $(empty)
 comma:= ,
 
 NAME = boost
-VERSION = 1_64_0
+VERSION = 1_68_0
 VERSIONDIR = $(subst _,.,$(VERSION))
 TOPDIR = $(CURDIR)
 IPHONEOS_SDK_ROOT := $(shell xcrun --sdk iphoneos --show-sdk-platform-path)
@@ -252,6 +252,7 @@ $(BUILDROOT)/$(X86_64_ARCH)/$(INSTALLED_BUILD_LIB) :
 	builddir="$(BUILDROOT)/$(JAM_ARCH)" ; \
 	installdir="$(BUILDROOT)/$(JAM_ARCH)/$(FRAMEWORKBUNDLE)" ; \
 	cd $(SRCDIR) && \
+	PATH=usr/local/bin:/usr/bin:/bin ; \
 	BOOST_BUILD_USER_CONFIG=$(BUILDROOT)/user-config-$(JAM_ARCH).jam \
 	./b2 --build-dir="$$builddir" --prefix="$$installdir" $(JAM_OPTIONS) toolset=clang-darwin-$(TOOLCHAIN_ARCH) target-os=iphone warnings=off link=static $(JAM_PROPERTIES) install && \
 	cd $$installdir/lib && printf "[$(JAM_ARCH)] extracting... " && \
