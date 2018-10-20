@@ -1,0 +1,11 @@
+--- boost_1_68_0/boost/date_time/dst_rules.hpp	2018-08-01 13:50:47.000000000 -0700
++++ boost_1_68_0.patched/boost/date_time/dst_rules.hpp	2018-10-20 15:15:02.000000000 -0700
+@@ -75,7 +75,7 @@
+                                 long dst_length_minutes)
+       {
+         //in US this will be 60 so offset in day is 1,0,0
+-        int offset = dst_end_offset_minutes-dst_length_minutes;
++        long offset = dst_end_offset_minutes-dst_length_minutes;
+         if (time_of_day < time_duration_type(0,offset,0)) {
+           return is_in_dst;
+         }

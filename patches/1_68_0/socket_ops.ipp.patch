@@ -1,0 +1,11 @@
+--- boost_1_68_0/boost/asio/detail/impl/socket_ops.ipp	2018-08-01 13:50:46.000000000 -0700
++++ boost_1_68_0.patched/boost/asio/detail/impl/socket_ops.ipp	2018-10-20 15:08:40.000000000 -0700
+@@ -3456,7 +3456,7 @@
+       host, hostlen, serv, servlen, flags, ec);
+ #else
+   clear_last_error();
+-  int error = ::getnameinfo(addr, addrlen, host, hostlen, serv, servlen, flags);
++  int error = ::getnameinfo(addr, static_cast<socklen_t>(addrlen), host, static_cast<socklen_t>(hostlen), serv, static_cast<socklen_t>(servlen), flags);
+   return ec = translate_addrinfo_error(error);
+ #endif
+ }

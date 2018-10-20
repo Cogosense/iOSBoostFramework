@@ -1,0 +1,11 @@
+--- boost_1_68_0/boost/array.hpp	2018-08-01 13:50:45.000000000 -0700
++++ boost_1_68_0.patched/boost/array.hpp	2018-10-20 14:26:46.000000000 -0700
+@@ -183,7 +183,7 @@
+ 
+         // check range (may be private because it is static)
+         static BOOST_CONSTEXPR bool rangecheck (size_type i) {
+-            return i > size() ? boost::throw_exception(std::out_of_range ("array<>: index out of range")), true : true;
++            return i > size() ? static_cast<void>(boost::throw_exception(std::out_of_range ("array<>: index out of range"))), true : true;
+         }
+ 
+     };
