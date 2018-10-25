@@ -1,0 +1,11 @@
+--- boost_1_68_0/boost/thread/detail/platform_time.hpp	2018-08-01 13:50:53.000000000 -0700
++++ boost_1_68_0.patched/boost/thread/detail/platform_time.hpp	2018-10-24 20:47:10.000000000 -0700
+@@ -145,7 +145,7 @@
+       platform_duration(boost::posix_time::time_duration const& rel_time)
+       {
+ #if defined BOOST_THREAD_CHRONO_POSIX_API || defined BOOST_THREAD_CHRONO_MAC_API
+-        ts_val.tv_sec = rel_time.total_seconds();
++        ts_val.tv_sec = static_cast<long>(rel_time.total_seconds());
+         ts_val.tv_nsec = static_cast<long>(rel_time.fractional_seconds() * (1000000000l / rel_time.ticks_per_second()));
+ #else
+         ns_val = static_cast<boost::time_max_t>(rel_time.total_seconds()) * 1000000000l;

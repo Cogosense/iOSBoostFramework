@@ -1,0 +1,11 @@
+--- boost_1_68_0/boost/date_time/posix_time/conversion.hpp	2018-08-01 13:50:47.000000000 -0700
++++ boost_1_68_0.patched/boost/date_time/posix_time/conversion.hpp	2018-10-24 18:06:06.000000000 -0700
+@@ -33,7 +33,7 @@
+   inline
+   std::time_t to_time_t(ptime pt)
+   {
+-    return (pt - ptime(gregorian::date(1970,1,1))).total_seconds();
++    return static_cast<time_t>((pt - ptime(gregorian::date(1970,1,1))).total_seconds());
+   }
+ 
+   //! Convert a time to a tm structure truncating any fractional seconds
