@@ -1,4 +1,4 @@
-# A Boost library framework for iOS
+# A Boost library framework for iOS [![Carthage compatible](https://img.shields.io/badge/Carthage-compatible-4BC51D.svg?style=flat)](https://github.com/Carthage/Carthage)
 
 More information on the [Boost home page](http://www.boost.org/)
 
@@ -32,18 +32,45 @@ The following boost libraries are built
 
 The locale library has the POSIX option turned on and the libiconv library supplied with iOS is used.
 
-## Support for Xcode Workspaces
-
-The project can be checked out into an Xcode workspace. In Xcode add the project file **iOSBoostFramework/iOSBoostFramework.xcodeproj**.
-The project places the final framework boost.framework in the **BUILT_PRODUCTS_DIR** build variable specified by the workspace configuration. This directory is
-searched by xcode for framework dependencies.
-
 ## Bitcode
 
 The Makefile supports bitcode generation for release builds. Debug builds use a bitcode-marker. Bitcode generation is controlled by the build variable
-**ENABLE_BITCODE** and the modeis controlled by the build variable **BITCODE_GENERATION_MODE**.
-
+**ENABLE_BITCODE** and the mode is controlled by the build variable **BITCODE_GENERATION_MODE**.
 
 ## Active Architectures
 
 When used in conjunction with an Xcode workspace, only the active architecture is built. This is specified by Xcode using the **ARCHS** build variable.
+
+## Support for Xcode Workspaces
+
+The project can be checked out into an Xcode workspace. Use Finder to drag the project file **iOSBoostFramework/iOSBoostFramework.xcodeproj** to the Xcode
+workspace.
+
+## Carthage
+
+The Makefile was refactored to work better with the new Xcode10 build system. The **iOSBoostFramework.xcodeproj**
+file was updated to include a shared Cocoa Touch Framework target **boost**. This is required
+by [Carthage](https://github.com/Carthage/Carthage).
+
+To add **iOSBoostFramework** to your project, first create a *Cartfile* in your project's root
+with the following contents:
+
+    github "Cogosense/iOSBoostFramework"
+
+Then build with Carthage:
+
+    carthage update
+
+More details on adding frameworks to a project can be found [here](https://github.com/Carthage/Carthage#adding-frameworks-to-an-application).
+
+## Legacy Makefile (deprecated)
+
+**Makefile.legacy** is the original Makefile. It supports boost v1.68.0 and won't be updated any further.
+
+To continue using the legacy Makefile use the **-f** option to make.
+
+    make -f Makefile.legacy build
+
+The xcodeproj file still contains the External Build Tool target **boost.framework** which
+invokes make with the **-f Makefile.legacy** option. Existing usage of this project should continue
+to work.

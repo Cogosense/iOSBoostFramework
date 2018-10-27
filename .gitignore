@@ -1,9 +1,9 @@
 *.bak
 *.swp
 .DS_Store
-boost*
-Info.plist
-ios
-build/
+/Info.plist
+/build/
 **/xcuserdata
-DerivedData/
+/DerivedData/
+/boost.framework.tar.bz2
+/Carthage

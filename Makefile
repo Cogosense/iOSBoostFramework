@@ -1,5 +1,5 @@
 #
-# supports architectures armv7, armv7s, arm64, i386 and x86_64
+# supports architectures armv7, armv7s, arm64, i386, x86_64 and bitcode
 #
 # make - build a fat archive framework using $ARCHS, if $ARCHS is empty all architectures are built (device and simulator)
 # make ARCHS=i386   \
@@ -15,16 +15,67 @@
 # Xcode bitcode support:
 # make ARCHS="armv7 arm64" ENABLE_BITCODE=YES BITCODE_GENERATION_MODE=bitcode - create bitcode
 # make ARCHS="armv7 arm64" ENABLE_BITCODE=YES BITCODE_GENERATION_MODE=marker - add bitcode marker (but no real bitcode)
-# 
+#
 # The ENABLE_BITCODE and BITCODE_GENERATION_MODE flags are set in the Xcode project settings
 #
 
 SHELL = /bin/bash
 
 #
+# library to be built
+NAME = boost
+VERSION = 1_68_0
+
+#
+# Download location URL
+#
+TARBALL = $(NAME)_$(VERSION).tar.bz2
+VERSIONDIR = $(subst _,.,$(VERSION))
+DOWNLOAD_URL = http://sourceforge.net/projects/boost/files/boost/$(VERSIONDIR)/$(TARBALL)
+
+#
+# Files used to trigger builds for each architecture
+# TARGET_BUILD_LIB file under install prefix that can be built directly
+# TARGET_NOBUILD_ARTIFACT file under install prefix that is built indirectly
+#
+INSTALLED_LIB = /lib/libboost.a
+INSTALLED_HEADER_DIR = /include/boost
+
+#
+# Output framework name
+#
+FRAMEWORK_NAME = $(NAME)
+
+#
+# The supported Xcode build architectures
+#
+ARM_V7_ARCH = armv7
+ARM_V7S_ARCH = armv7s
+ARM_64_ARCH = arm64
+I386_ARCH = i386
+X86_64_ARCH = x86_64
+
+#
+# SDK root directories
+#
+IPHONEOS_SDK_ROOT := $(shell xcrun --sdk iphoneos --show-sdk-platform-path)
+IPHONESIMULATOR_SDK_ROOT := $(shell xcrun --sdk iphonesimulator --show-sdk-platform-path)
+
+#
 # set or unset warning flags
 #
 WFLAGS = -Wall -pedantic -Wno-unused-variable
+
+#
+# The following options must be the same for all projects that
+# link against this boost library
+# -fvisibility=hidden
+# -fvisibility-inlines-hidden
+# (if -fvisibility=hidden is specified, then -fvisibility-inlines-hidden is unnecessary as inlines are already hidden)
+#
+EXTRA_CPPFLAGS = -DBOOST_AC_USE_PTHREADS -DBOOST_SP_USE_PTHREADS -stdlib=libc++ -std=c++11
+BOOST_LIBS = test thread atomic signals filesystem regex program_options system date_time serialization exception random locale
+JAM_PROPERTIES =
 
 #
 # set minimum iOS version supported
@@ -47,325 +98,218 @@ ifeq "$(ENABLE_BITCODE)" "YES"
     endif
 endif
 
+#
+# ARCHS and BUILT_PRODUCTS_DIR are set by xcode
+# only set them if make is invoked directly
+#
+ARCHS ?= $(ARM_V7_ARCH) $(ARM_V7S_ARCH) $(ARM_64_ARCH) $(I386_ARCH) $(X86_64_ARCH)
+BUILT_PRODUCTS_DIR ?= $(CURDIR)/build
+
+MAKER_DIR = $(BUILT_PRODUCTS_DIR)/Maker
+MAKER_ARCHIVES_DIR = $(MAKER_DIR)/Archives
+MAKER_SOURCES_DIR = $(MAKER_DIR)/Sources
+MAKER_BUILD_DIR = $(MAKER_DIR)/Build
+MAKER_BUILDROOT_DIR = $(MAKER_DIR)/Buildroot
+
+PKGSRCDIR = $(MAKER_SOURCES_DIR)/$(NAME)_$(VERSION)
+
+FRAMEWORKBUNDLE = $(FRAMEWORK_NAME).framework
+
 empty:=
 space:= $(empty) $(empty)
 comma:= ,
 
-NAME = boost
-VERSION = 1_68_0
-VERSIONDIR = $(subst _,.,$(VERSION))
-TOPDIR = $(CURDIR)
-IPHONEOS_SDK_ROOT := $(shell xcrun --sdk iphoneos --show-sdk-platform-path)
-IPHONESIMULATOR_SDK_ROOT := $(shell xcrun --sdk iphonesimulator --show-sdk-platform-path)
-#
-# ARCHS, BUILT_PRODUCTS_DIR and BUILDROOT are set by xcode
-# only set them if make is invoked directly
-#
-ARCHS ?= $(ARM_V7_ARCH) $(ARM_V7S_ARCH) $(ARM_64_ARCH) $(I386_ARCH) $(X86_64_ARCH)
-BUILT_PRODUCTS_DIR ?= $(TOPDIR)/build
-OBJECT_FILE_DIR ?= $(TOPDIR)/build
-DERIVED_SOURCES_DIR ?= $(TOPDIR)/build
-PROJECT_TEMP_DIR ?= $(TOPDIR)/build
-SRCROOT = $(DERIVED_SOURCES_DIR)
-BUILDROOT = $(OBJECT_FILE_DIR)
-SRCDIR = $(SRCROOT)/$(NAME)_$(VERSION)
-TARBALL = $(NAME)_$(VERSION).tar.bz2
-ARM_V7_HOST = armv7-apple-darwin
-ARM_V7S_HOST = armv7s-apple-darwin
-ARM_64_HOST = aarch64-apple-darwin
-I386_HOST = i386-apple-darwin
-X86_64_HOST = x86_64-apple-darwin
-ARM_V7_ARCH = armv7
-ARM_V7S_ARCH = armv7s
-ARM_64_ARCH = arm64
-I386_ARCH = i386
-X86_64_ARCH = x86_64
-FRAMEWORK_VERSION = A
-FRAMEWORK_NAME = boost
-FRAMEWORKBUNDLE = $(FRAMEWORK_NAME).framework
-DOWNLOAD_URL = http://sourceforge.net/projects/boost/files/boost/$(VERSIONDIR)/$(TARBALL)
+.PHONY : \
+	all \
+	build \
+	install \
+	clean \
+	build-commence \
+	build-complete \
+	install-commence i\
+	nstall-complete \
+	dirs \
+	tarball \
+	bootstrap \
+	jams \
+	$(addprefix Jam_, $(ARCHS)) \
+	builds \
+	$(addprefix Build_, $(ARCHS))
 
-#
-# Files used to trigger builds for each architecture
-# TARGET_BUILD_LIB installed library under prefix that is being built
-# TARGET_NOBUILD_ARTIFACT file under install prefix that is built indirectly
-#
-TARGET_BUILD_LIB = /lib/libboost.a
-TARGET_NOBUILD_ARTIFACT = /include/boost/config.hpp
+all : build
 
-INSTALLED_BUILD_LIB = $(FRAMEWORKBUNDLE)$(TARGET_BUILD_LIB)
-INSTALLED_NOBUILD_ARTIFACT = $(FRAMEWORKBUNDLE)$(TARGET_NOBUILD_ARTIFACT)
+build : build-commence dirs tarball bootstrap jams builds bundle build-complete
 
-BUILT_LIBS = $(addprefix $(BUILDROOT)/, $(addsuffix /$(INSTALLED_BUILD_LIB), $(ARCHS)))
-NOBUILD_ARTIFACTS = $(addprefix $(BUILDROOT)/, $(addsuffix /$(INSTALLED_NOBUILD_ARTIFACT), $(ARCHS)))
+install : install-commence dirs tarball bootstrap jams builds bundle install-complete
 
-#
-# The following options must be the same for all projects that
-# link against this boost library
-# -fvisibility=hidden
-# -fvisibility-inlines-hidden
-# (if -fvisibility=hidden is specified, then -fvisibility-inlines-hidden is unnecessary as inlines are already hidden)
-#
-EXTRA_CPPFLAGS = -DBOOST_AC_USE_PTHREADS -DBOOST_SP_USE_PTHREADS -stdlib=libc++ -std=c++11
-BOOST_LIBS = test thread atomic signals filesystem regex program_options system date_time serialization exception random locale
-JAM_PROPERTIES = 
-
-define Info_plist
-<?xml version="1.0" encoding="UTF-8"?>\n
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n
-<plist version="1.0">\n
-<dict>\n
-\t<key>CFBundleDevelopmentRegion</key>\n
-\t<string>English</string>\n
-\t<key>CFBundleExecutable</key>\n
-\t<string>$(FRAMEWORK_NAME)</string>\n
-\t<key>CFBundleIdentifier</key>\n
-\t<string>org.boost</string>\n
-\t<key>CFBundleInfoDictionaryVersion</key>\n
-\t<string>$(VERSION)</string>\n
-\t<key>CFBundlePackageType</key>\n
-\t<string>FMWK</string>\n
-\t<key>CFBundleSignature</key>\n
-\t<string>????</string>\n
-\t<key>CFBundleVersion</key>\n
-\t<string>$(VERSION)</string>\n
-</dict>\n
-</plist>\n
-endef
-
-.PHONY: framework-build
-
-all install : framework-build
-
-distclean : clean
-	$(RM) $(PROJECT_TEMP_DIR)/$(TARBALL)
-
-clean : mostlyclean
-	$(RM) -r $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)
-	$(RM) -r $(SRCDIR)
-	$(RM) $(FRAMEWORKBUNDLE).tar.bz2
+clean :
+	$(RM) -r $(BUILT_PRODUCTS_DIR)
 	$(RM) -r DerivedData
-
-mostlyclean :
+	$(RM) -r Carthage
+	$(RM) *.framework.tar.bz2
 	$(RM) Info.plist
-	$(RM) $(BUILDROOT)/*.jam
-	$(RM) -r $(BUILDROOT)/$(ARM_V7_ARCH)
-	$(RM) -r $(BUILDROOT)/$(ARM_V7S_ARCH)
-	$(RM) -r $(BUILDROOT)/$(ARM_64_ARCH)
-	$(RM) -r $(BUILDROOT)/$(I386_ARCH)
-	$(RM) -r $(BUILDROOT)/$(X86_64_ARCH)
 
-env :
-	env
+build-commence :
+	@echo "Commencing debug build for framework: $(FRAMEWORK_NAME)"
 
-$(PROJECT_TEMP_DIR)/$(TARBALL) :
-	mkdir -p $(PROJECT_TEMP_DIR)
+build-complete :
+	@echo "Completed debug build for framework: $(FRAMEWORK_NAME)"
+
+install-commence :
+	@echo "Commencing release build for framework: $(FRAMEWORK_NAME)"
+
+install-complete :
+	@echo "Completed release build for framework: $(FRAMEWORK_NAME)"
+
+dirs : $(MAKER_ARCHIVES_DIR) $(MAKER_SOURCES_DIR) $(MAKER_BUILD_DIR) $(MAKER_BUILDROOT_DIR)
+
+$(MAKER_ARCHIVES_DIR) $(MAKER_SOURCES_DIR) $(MAKER_BUILD_DIR) $(MAKER_BUILDROOT_DIR) :
+	mkdir -p $@
+
+tarball : dirs $(MAKER_ARCHIVES_DIR)/$(TARBALL)
+
+$(MAKER_ARCHIVES_DIR)/$(TARBALL) :
 	curl -L --retry 10 -s -o $@ $(DOWNLOAD_URL) || { \
 	    $(RM) $@ ; \
 	    exit 1 ; \
 	}
 
-$(SRCDIR)/bootstrap.sh : $(PROJECT_TEMP_DIR)/$(TARBALL)
-	mkdir -p $(SRCROOT)
-	tar -C $(SRCROOT) -xmf $(PROJECT_TEMP_DIR)/$(TARBALL)
+bootstrap : dirs tarball $(PKGSRCDIR)/bootstrap.sh
+
+$(PKGSRCDIR)/bootstrap.sh :
+	tar -C $(MAKER_SOURCES_DIR) -xmf $(MAKER_ARCHIVES_DIR)/$(TARBALL)
 	if [ -d patches/$(VERSION) ] ; then \
 	    for p in patches/$(VERSION)/* ; do \
 		if [ -f $$p ] ; then \
-		    patch -d $(SRCDIR) -p1 < $$p ; \
+		    patch -d $(PKGSRCDIR) -p1 < $$p ; \
 		fi ; \
 	    done ; \
 	fi
+
+jams : dirs tarball bootstrap $(addprefix Jam_, $(ARCHS)) $(PKGSRCDIR)/b2
 
 #
 # bjam source code is not c99 compatible, setting iOS9.3
 # compatibility forces c99 mode, iOS9.3 is default level for
 # Xcode 7.3.1
 #
-$(SRCDIR)/b2 : $(SRCDIR)/bootstrap.sh
+$(PKGSRCDIR)/b2 : $(PKGSRCDIR)/bootstrap.sh
 	unset IPHONEOS_DEPLOYMENT_TARGET ;\
 	unset SDKROOT ;\
 	export PATH=usr/local/bin:/usr/bin:/bin ; \
-	cd $(SRCDIR) && ./bootstrap.sh --with-libraries=$(subst $(space),$(comma),$(BOOST_LIBS))
+	cd $(PKGSRCDIR) && ./bootstrap.sh --with-libraries=$(subst $(space),$(comma),$(BOOST_LIBS))
 
+builds : dirs tarball bootstrap jams $(addprefix Build_, $(ARCHS))
 
-$(BUILDROOT)/$(ARM_V7_ARCH) \
-$(BUILDROOT)/$(ARM_V7S_ARCH) \
-$(BUILDROOT)/$(ARM_64_ARCH) \
-$(BUILDROOT)/$(I386_ARCH) \
-$(BUILDROOT)/$(X86_64_ARCH) :
-	mkdir -p $@
+#
+# $1 - sdk (iphoneos or iphonesimulator)
+# $2 - xcode architecture (armv7, armv7s, arm64, i386, x86_64)
+# $3 - boost toolchain architecture (arm, arm64, x86, x86_64)
+#
+define configure_template
 
-$(BUILDROOT)/user-config-$(ARM_V7_ARCH).jam \
-$(BUILDROOT)/user-config-$(ARM_V7S_ARCH).jam \
-$(BUILDROOT)/user-config-$(ARM_64_ARCH).jam \
-$(BUILDROOT)/user-config-$(I386_ARCH).jam \
-$(BUILDROOT)/user-config-$(X86_64_ARCH).jam : $(SRCDIR)/b2
-	    echo using clang-darwin : $(TOOLCHAIN_ARCH) > $@
-	    echo "    : xcrun --sdk $(JAM_SDK) clang++" >> $@
-	    echo "    : <cxxflags>\"-miphoneos-version-min=$(MIN_IOS_VER) $(XCODE_BITCODE_FLAG) -arch $(JAM_ARCH) $(EXTRA_CPPFLAGS) $(JAM_DEFINES) $(WFLAGS)\"" >> $@
-	    echo "      <linkflags>\"-arch $(JAM_ARCH)\"" >> $@
-	    echo "      <striper>" >> $@
-	    echo "    ;" >> $@
+Jam_$(2) : $(MAKER_BUILD_DIR)/$(2) $(MAKER_BUILD_DIR)/$(2)/user-config.jam
 
-$(BUILDROOT)/$(ARM_V7_ARCH)/$(INSTALLED_BUILD_LIB) : $(BUILDROOT)/$(ARM_V7_ARCH) $(BUILDROOT)/user-config-$(ARM_V7_ARCH).jam
+$(MAKER_BUILD_DIR)/$(2) :
+	mkdir -p $$@
 
-$(BUILDROOT)/$(ARM_V7S_ARCH)/$(INSTALLED_BUILD_LIB) : $(BUILDROOT)/$(ARM_V7S_ARCH) $(BUILDROOT)/user-config-$(ARM_V7S_ARCH).jam
+$(MAKER_BUILD_DIR)/$(2)/user-config.jam :
+	echo using clang-darwin : $(3) > $$@
+	echo "    : xcrun --sdk $(1) clang++" >> $$@
+	echo "    : <cxxflags>\"-miphoneos-version-min=$$(MIN_IOS_VER) $$(XCODE_BITCODE_FLAG) -arch $(2) $$(EXTRA_CPPFLAGS) $$(JAM_DEFINES) $$(WFLAGS)\"" >> $$@
+	echo "      <linkflags>\"-arch $(2)\"" >> $$@
+	echo "      <striper>" >> $$@
+	echo "    ;" >> $$@
 
-$(BUILDROOT)/$(ARM_64_ARCH)/$(INSTALLED_BUILD_LIB) : $(BUILDROOT)/$(ARM_64_ARCH) $(BUILDROOT)/user-config-$(ARM_64_ARCH).jam
+Build_$(2) : $(MAKER_BUILDROOT_DIR)/$(2)/$(FRAMEWORKBUNDLE)$(INSTALLED_LIB)
 
-$(BUILDROOT)/$(I386_ARCH)/$(INSTALLED_BUILD_LIB) : $(BUILDROOT)/$(I386_ARCH) $(BUILDROOT)/user-config-$(I386_ARCH).jam
-
-$(BUILDROOT)/$(X86_64_ARCH)/$(INSTALLED_BUILD_LIB) : $(BUILDROOT)/$(X86_64_ARCH) $(BUILDROOT)/user-config-$(X86_64_ARCH).jam
-
-$(BUILDROOT)/$(ARM_V7_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_SDK = iphoneos
-$(BUILDROOT)/$(ARM_V7_ARCH)/$(INSTALLED_BUILD_LIB) : TOOLCHAIN_ARCH = arm
-$(BUILDROOT)/$(ARM_V7_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_ARCH = $(ARM_V7_ARCH)
-$(BUILDROOT)/$(ARM_V7_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_DEFINES = -D_LITTLE_ENDIAN
-$(BUILDROOT)/$(ARM_V7_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_OPTIONS = -sICONV_PATH=$(IPHONEOS_SDK_ROOT)/Developer/SDKs/iPhoneOS.sdk/usr
-
-$(BUILDROOT)/$(ARM_V7S_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_SDK = iphoneos
-$(BUILDROOT)/$(ARM_V7S_ARCH)/$(INSTALLED_BUILD_LIB) : TOOLCHAIN_ARCH = arm
-$(BUILDROOT)/$(ARM_V7S_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_ARCH = $(ARM_V7S_ARCH)
-$(BUILDROOT)/$(ARM_V7S_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_DEFINES = -D_LITTLE_ENDIAN
-$(BUILDROOT)/$(ARM_V7S_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_OPTIONS = -sICONV_PATH=$(IPHONEOS_SDK_ROOT)/Developer/SDKs/iPhoneOS.sdk/usr
-
-$(BUILDROOT)/$(ARM_64_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_SDK = iphoneos
-$(BUILDROOT)/$(ARM_64_ARCH)/$(INSTALLED_BUILD_LIB) : TOOLCHAIN_ARCH = arm64
-$(BUILDROOT)/$(ARM_64_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_ARCH = $(ARM_64_ARCH)
-$(BUILDROOT)/$(ARM_64_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_DEFINES = -D_LITTLE_ENDIAN
-$(BUILDROOT)/$(ARM_64_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_OPTIONS = -sICONV_PATH=$(IPHONEOS_SDK_ROOT)/Developer/SDKs/iPhoneOS.sdk/usr
-
-$(BUILDROOT)/$(I386_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_SDK = iphonesimulator
-$(BUILDROOT)/$(I386_ARCH)/$(INSTALLED_BUILD_LIB) : TOOLCHAIN_ARCH = x86
-$(BUILDROOT)/$(I386_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_ARCH = $(I386_ARCH)
-$(BUILDROOT)/$(I386_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_OPTIONS = -sICONV_PATH=$(IPHONESIMULATOR_SDK_ROOT)/Developer/SDKs/iPhoneSimulator.sdk/usr
-
-$(BUILDROOT)/$(X86_64_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_SDK = iphonesimulator
-$(BUILDROOT)/$(X86_64_ARCH)/$(INSTALLED_BUILD_LIB) : TOOLCHAIN_ARCH = x86_64
-$(BUILDROOT)/$(X86_64_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_ARCH = $(X86_64_ARCH)
-$(BUILDROOT)/$(X86_64_ARCH)/$(INSTALLED_BUILD_LIB) : JAM_OPTIONS = -sICONV_PATH=$(IPHONESIMULATOR_SDK_ROOT)/Developer/SDKs/iPhoneSimulator.sdk/usr
-
-$(BUILDROOT)/$(ARM_V7_ARCH)/$(INSTALLED_BUILD_LIB) \
-$(BUILDROOT)/$(ARM_V7S_ARCH)/$(INSTALLED_BUILD_LIB) \
-$(BUILDROOT)/$(ARM_64_ARCH)/$(INSTALLED_BUILD_LIB) \
-$(BUILDROOT)/$(I386_ARCH)/$(INSTALLED_BUILD_LIB) \
-$(BUILDROOT)/$(X86_64_ARCH)/$(INSTALLED_BUILD_LIB) : 
-	builddir="$(BUILDROOT)/$(JAM_ARCH)" ; \
-	installdir="$(BUILDROOT)/$(JAM_ARCH)/$(FRAMEWORKBUNDLE)" ; \
-	cd $(SRCDIR) && \
+$(MAKER_BUILDROOT_DIR)/$(2)/$(FRAMEWORKBUNDLE)$(INSTALLED_LIB) :
+	builddir="$(MAKER_BUILDROOT_DIR)/$(2)" ; \
+	installdir="$(MAKER_BUILDROOT_DIR)/$(2)/$(FRAMEWORKBUNDLE)" ; \
+	cd $(PKGSRCDIR) && \
 	PATH=usr/local/bin:/usr/bin:/bin ; \
-	BOOST_BUILD_USER_CONFIG=$(BUILDROOT)/user-config-$(JAM_ARCH).jam \
-	./b2 --build-dir="$$builddir" --prefix="$$installdir" $(JAM_OPTIONS) toolset=clang-darwin-$(TOOLCHAIN_ARCH) target-os=iphone warnings=off link=static $(JAM_PROPERTIES) install && \
-	cd $$installdir/lib && printf "[$(JAM_ARCH)] extracting... " && \
+	BOOST_BUILD_USER_CONFIG=$(MAKER_BUILD_DIR)/$(2)/user-config.jam \
+	./b2 --build-dir="$$$$builddir" --prefix="$$$$installdir" $$(JAM_OPTIONS) toolset=clang-darwin-$(3) target-os=iphone warnings=off link=static $$(JAM_PROPERTIES) install && \
+	cd $$$$installdir/lib && printf "[$(2)] extracting... " && \
 	for ar in `find . -name "*.a"` ; do \
-	    boostlib=`basename $$ar` ; \
-	    if [ $$boostlib != libboost.a ] ; then \
-		libname=`echo $$boostlib | sed 's/.*libboost_\([^.]*\).*$$/\1/'` ; \
-		mkdir $$libname && printf "$$libname " ; \
-		(cd $$libname && xcrun -sdk $(JAM_SDK) ar -x ../$$boostlib) || { \
-		    echo "failed to extract $(dir $@)/$$boostlib"; \
-		    $(RM) $@; \
+	    boostlib=`basename $$$$ar` ; \
+	    if [ $$$$boostlib != libboost.a ] ; then \
+		libname=`echo $$$$boostlib | sed 's/.*libboost_\([^.]*\).*$$$$/\1/'` ; \
+		mkdir $$$$libname && printf "$$$$libname " ; \
+		(cd $$$$libname && xcrun -sdk $(1) ar -x ../$$$$boostlib) || { \
+		    echo "failed to extract $$(dir $$@)/$$$$boostlib"; \
+		    $(RM) $$@; \
 		    exit 1 ; \
 		} ; \
-		for obj in `find $$libname -name '*.o'` ; do \
-		    file=`basename $$obj` ; \
-		    mv $$obj ./$${libname}_$${file} ; \
+		for obj in `find $$$$libname -name '*.o'` ; do \
+		    file=`basename $$$$obj` ; \
+		    mv $$$$obj ./$$$${libname}_$$$${file} ; \
 		done ; \
-		$(RM) -r $$libname ; \
+		$(RM) -r $$$$libname ; \
 	    fi ; \
-	    $(RM) $$ar ; \
+	    $(RM) $$$$ar ; \
 	done ; \
 	printf "\n" ; \
-	xcrun -sdk $(JAM_SDK) ar -cruS libboost.a *.o ; \
-	xcrun -sdk $(JAM_SDK) ranlib libboost.a > /dev/null 2>&1 ; \
+	xcrun -sdk $(1) ar -cruS libboost.a *.o ; \
+	xcrun -sdk $(1) ranlib libboost.a > /dev/null 2>&1 ; \
 	$(RM) *.o
 
-export Info_plist
+endef
 
-Info.plist : Makefile
-	echo -e $$Info_plist > $@
-
-.PHONY : framework-archs-cmp
-framework-archs-cmp :
-	@found='no' ; \
-	if [ -f "$(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/$(FRAMEWORK_NAME)" ] ; then \
-		archs=`lipo -info "$(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/$(FRAMEWORK_NAME)" | awk -F: '{print $$3}'` ; \
-		for archReq in $(ARCHS) ; do \
-			for archHave in $$archs ; do \
-				if [ $$archReq == $$archHave ] ; then \
-					found='yes' ; \
-					break ; \
-				fi ; \
-			done ; \
-			if [ $$found == 'no' ] ; then \
-				break ; \
-			fi ; \
-		done ; \
-	fi ; \
-	if [ $$found == 'no' ] ; then \
-		$(RM) $(FRAMEWORKBUNDLE).tar.bz2 ; \
-		echo "rebuilding $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE) for $(ARCHS)" ; \
-	fi
-
-framework-build: FRAMEWORKBUNDLE_DEPS = $(BUILT_LIBS)
-framework-build: framework-archs-cmp $(BUILT_LIBS) $(FRAMEWORKBUNDLE).tar.bz2
-
-#
-# The framework-no-build target is used by Jenkins to assemble
-# the results of the individual architectures built in parallel.
-#
-# The pipeline stash/unstash feature is used to assemble the build
-# results from each parallel phase.
-#
-# This target depends on a built file in each framework bundle,
-# if it is missing then the build fails as the master has no
-# rules to build it.
-#
-framework-no-build: FRAMEWORKBUNDLE_DEPS = $(NOBUILD_ARTIFACTS)
-framework-no-build: framework-archs-cmp $(NOBUILD_ARTIFACTS) $(FRAMEWORKBUNDLE).tar.bz2
-
-$(FRAMEWORKBUNDLE).tar.bz2 : $(FRAMEWORKBUNDLE_DEPS)
-	$(MAKE) bundle
-	$(RM) $(FRAMEWORKBUNDLE).tar.bz2
-	tar -C $(BUILT_PRODUCTS_DIR) -cjf $(FRAMEWORKBUNDLE).tar.bz2 $(FRAMEWORKBUNDLE)
+$(eval $(call configure_template,iphoneos,$(ARM_V7_ARCH),arm))
+$(eval $(call configure_template,iphoneos,$(ARM_V7S_ARCH),arm))
+$(eval $(call configure_template,iphoneos,$(ARM_64_ARCH),arm64))
+$(eval $(call configure_template,iphonesimulator,$(I386_ARCH),x86))
+$(eval $(call configure_template,iphonesimulator,$(X86_64_ARCH),x86_64))
 
 FIRST_ARCH = $(firstword $(ARCHS))
 
-.PHONY : bundle-dirs bundle-resources bundle-headers bundle-libraries system-framework-dirs
+.PHONY : bundle-dirs bundle-headers bundle-rm-fat-library bundle-info
 
-bundle : bundle-dirs bundle-resources bundle-headers bundle-libraries system-framework-dirs
+bundle : \
+	bundle-dirs \
+	bundle-headers \
+	bundle-rm-fat-library \
+	$(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/$(FRAMEWORK_NAME) \
+	bundle-info \
+	$(FRAMEWORKBUNDLE).tar.bz2
 
-#
-# This directory should be added to SYSTEM_FRAMEWORK_SEARCH_PATHS in dependent
-# projects to suppress the generation of warnings from the framework.
-#
-# This framework can also be found using FRAMEWORK_SEARCH_PATHS, so ensure the
-# SYSTEM version is in the compiler command line before the USER version
-#
-system-framework-dirs :
-	mkdir -p $(BUILT_PRODUCTS_DIR)/System
-	ln -sf ../$(FRAMEWORKBUNDLE)  $(BUILT_PRODUCTS_DIR)/System/$(FRAMEWORKBUNDLE)
+FRAMEWORK_DIRS = \
+	$(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE) \
+	$(FRAMEWORKBUNDLE)/Resources \
+	$(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Headers \
+	$(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Documentation \
+	$(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Modules
 
+bundle-dirs : $(FRAMEWORK_DIRS)
 
-bundle-dirs:
-	mkdir -p $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)
-	mkdir -p $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions
-	mkdir -p $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions/$(FRAMEWORK_VERSION)
-	mkdir -p $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions/$(FRAMEWORK_VERSION)/Resources
-	mkdir -p $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions/$(FRAMEWORK_VERSION)/Headers
-	mkdir -p $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions/$(FRAMEWORK_VERSION)/Documentation
-	ln -sf $(FRAMEWORK_VERSION) $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions/Current
-	ln -sf Versions/Current/Headers $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Headers
-	ln -sf Versions/Current/Resources $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Resources
-	ln -sf Versions/Current/Documentation $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Documentation
-	ln -sf Versions/Current/$(FRAMEWORK_NAME) $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/$(FRAMEWORK_NAME)
-
-bundle-resources : Info.plist bundle-dirs
-	cp Info.plist $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions/$(FRAMEWORK_VERSION)/Resources/
+$(FRAMEWORK_DIRS) :
+	mkdir -p $@
 
 bundle-headers : bundle-dirs
-	cp -a $(BUILDROOT)/$(FIRST_ARCH)/$(FRAMEWORKBUNDLE)/include/boost/  $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions/$(FRAMEWORK_VERSION)/Headers/
+	rsync -r -u $(MAKER_BUILDROOT_DIR)/$(FIRST_ARCH)/$(FRAMEWORKBUNDLE)$(INSTALLED_HEADER_DIR)/* $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Headers
 
-bundle-libraries : bundle-dirs
-	xcrun -sdk iphoneos lipo -create $(BUILT_LIBS) -o $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions/$(FRAMEWORK_VERSION)/$(FRAMEWORK_NAME)
+$(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Info.plist :
+	cp $(FRAMEWORK_NAME)/Info.plist $@
+	/usr/libexec/plistbuddy -c "Set:CFBundleDevelopmentRegion English" $@
+	/usr/libexec/plistbuddy -c "Set:CFBundleExecutable $(NAME)" $@
+	/usr/libexec/plistbuddy -c "Set:CFBundleName $(FRAMEWORK_NAME)" $@
+	/usr/libexec/plistbuddy -c "Set:CFBundleIdentifier com.cogosense.$(NAME)" $@
+
+bundle-info : $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Info.plist
+	verCode=$$(git tag -l '[0-9]*\.[0-9]*\.[0-9]' | wc -l) ; \
+	verStr=$$(git describe --match '[0-9]*\.[0-9]*\.[0-9]' --always) ; \
+	/usr/libexec/plistbuddy -c "Set:CFBundleShortVersionString $${verStr}" $< ; \
+	/usr/libexec/plistbuddy -c "Set:CFBundleVersion $${verCode}" $<
+	plutil -convert binary1 $<
+
+bundle-rm-fat-library :
+	$(RM) $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/$(FRAMEWORK_NAME)
+
+$(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/$(FRAMEWORK_NAME) : $(addprefix $(MAKER_BUILDROOT_DIR)/, $(addsuffix /$(FRAMEWORKBUNDLE)$(INSTALLED_LIB),$(ARCHS)))
+	xcrun -sdk iphoneos lipo -create $^ -o $@
+
+$(FRAMEWORKBUNDLE).tar.bz2 :
+	$(RM) $(FRAMEWORKBUNDLE).tar.bz2
+	tar -C $(BUILT_PRODUCTS_DIR) -cjf $(FRAMEWORKBUNDLE).tar.bz2 $(FRAMEWORKBUNDLE)
 
