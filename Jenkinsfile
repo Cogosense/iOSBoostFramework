@@ -86,7 +86,7 @@ node('osx && ios') {
             unstash 'arm64'
             // Accept the license on first install and updates
             Utils.&acceptXcodeLicense()
-            sh 'make ARCHS="armv7 arm64" framework-no-build'
+            sh 'make ARCHS="armv7 arm64" bundle'
         }
 
         stage ('Archive Artifacts') {
