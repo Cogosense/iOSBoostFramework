@@ -22,11 +22,6 @@ node('osx && ios') {
 
     stage ('Create Change Logs') {
         sshagent(['38bf8b09-9e52-421a-a8ed-5280fcb921af']) {
-            try {
-                Utils.&copyArtifactWhenAvailable("Cogosense/iOSBoostFramework/${env.BRANCH_NAME}", 'SCM/CHANGELOG', 1, 0)
-            }
-            catch(err) {}
-
             dir('./SCM') {
                 sh '../utils/scmBuildDate > TIMESTAMP'
                 writeFile file: "TAG", text: buildLabel
@@ -34,8 +29,10 @@ node('osx && ios') {
                 writeFile file: "BRANCH", text: env.BRANCH_NAME
                 sh '../utils/scmBuildContributors > CONTRIBUTORS'
                 sh '../utils/scmBuildOnHookEmail > ONHOOK_EMAIL'
-                sh "../utils/scmUpdateChangeLog -t ${buildLabel} -o CHANGELOG"
-                sh '../utils/scmTagLastBuild'
+                def htmlChangelog = Utils.&generateChangeLog(false)
+                def mdChangelog = Utils.&generateChangeLog(true)
+                currentBuild.description = htmlChangelog
+                writeFile file: "CHANGELOG.md", text: mdChangelog
             }
         }
     }
@@ -97,12 +94,8 @@ node('osx && ios') {
                 onlyIfSuccessful: true])
         }
 
-        stage ('Tag Build') {
-            sshagent(['38bf8b09-9e52-421a-a8ed-5280fcb921af']) {
-                sh "utils/scmTagBuild ${buildLabel}"
-            }
-        }
-    } catch(err) {
+    }
+    catch(err) {
         currentBuild.result = "FAILURE"
         Utils.&sendFailureEmail(contributors, err)
         throw err

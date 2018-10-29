@@ -55,7 +55,7 @@ by [Carthage](https://github.com/Carthage/Carthage).
 To add **iOSBoostFramework** to your project, first create a *Cartfile* in your project's root
 with the following contents:
 
-    github "Cogosense/iOSBoostFramework"
+    github "Cogosense/iOSBoostFramework" >= 1.68.0
 
 Then build with Carthage:
 
