@@ -147,6 +147,7 @@ clean :
 	$(RM) -r DerivedData
 	$(RM) -r Carthage
 	$(RM) *.framework.tar.bz2
+	$(RM $(FRAMEWORK_NAME).zip
 	$(RM) Info.plist
 
 build-commence :
