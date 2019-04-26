@@ -1,0 +1,34 @@
+--- boost_1_70_0/tools/build/src/tools/gcc.jam	2019-04-26 00:37:31.000000000 -0700
++++ boost_1_70_0.patched/tools/build/src/tools/gcc.jam	2019-04-26 00:31:39.000000000 -0700
+@@ -461,7 +461,7 @@
+ 
+     local no-threading = android beos haiku sgi darwin vxworks ;
+     local threading-generic-os = [ set.difference $(all-os) : $(no-threading) $(bsd) windows cygwin solaris ] ;
+-    threading-flags <target-os>$(threading-generic-os) : -pthread : rt ;
++    threading-flags <target-os>$(threading-generic-os) : -pthread ;
+ }
+ 
+ {
+@@ -939,9 +939,8 @@
+     toolset.flags gcc.link RPATH <target-os>$(generic-os) : <dll-path> ;
+     toolset.flags gcc.link RPATH_OPTION <target-os>$(generic-os) : -rpath ;
+     toolset.flags gcc.link RPATH_LINK <target-os>$(generic-os) : <xdll-path> ;
+-    toolset.flags gcc.link START-GROUP <target-os>$(generic-os) :
+-        -Wl,--start-group ;
+-    toolset.flags gcc.link END-GROUP <target-os>$(generic-os) : -Wl,--end-group ;
++    toolset.flags gcc.link START-GROUP <target-os>$(generic-os) : ;
++    toolset.flags gcc.link END-GROUP <target-os>$(generic-os) : ;
+ 
+     # gnu ld has the ability to change the search behaviour for libraries
+     # referenced by the -l switch. These modifiers are -Bstatic and
+@@ -976,8 +975,8 @@
+     # search patterns!
+ 
+     # On *nix mixing shared libs with static runtime is not a good idea.
+-    toolset.flags gcc.link FINDLIBS-ST-PFX <target-os>$(generic-os)/<runtime-link>shared : -Wl,-Bstatic ;
+-    toolset.flags gcc.link FINDLIBS-SA-PFX <target-os>$(generic-os)/<runtime-link>shared : -Wl,-Bdynamic ;
++    toolset.flags gcc.link FINDLIBS-ST-PFX <target-os>$(generic-os)/<runtime-link>shared :  ;
++    toolset.flags gcc.link FINDLIBS-SA-PFX <target-os>$(generic-os)/<runtime-link>shared :  ;
+ 
+     # On windows allow mixing of static and dynamic libs with static
+     # runtime is not a good idea.

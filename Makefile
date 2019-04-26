@@ -24,7 +24,7 @@ SHELL = /bin/bash
 #
 # library to be built
 NAME = boost
-VERSION = 1_68_0
+VERSION = 1_70_0
 
 #
 # Download location URL
@@ -74,7 +74,7 @@ WFLAGS = -Wall -pedantic -Wno-unused-variable
 # (if -fvisibility=hidden is specified, then -fvisibility-inlines-hidden is unnecessary as inlines are already hidden)
 #
 EXTRA_CPPFLAGS = -DBOOST_AC_USE_PTHREADS -DBOOST_SP_USE_PTHREADS -stdlib=libc++ -std=c++11
-BOOST_LIBS = test thread atomic signals filesystem regex program_options system date_time serialization exception random locale
+BOOST_LIBS = atomic date_time exception filesystem locale program_options random regex serialization system test thread
 JAM_PROPERTIES =
 
 #
