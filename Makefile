@@ -73,8 +73,8 @@ WFLAGS = -Wall -pedantic -Wno-unused-variable
 # -fvisibility-inlines-hidden
 # (if -fvisibility=hidden is specified, then -fvisibility-inlines-hidden is unnecessary as inlines are already hidden)
 #
-EXTRA_CPPFLAGS = -DBOOST_AC_USE_PTHREADS -DBOOST_SP_USE_PTHREADS -stdlib=libc++ -std=c++11
-BOOST_LIBS = atomic date_time exception filesystem locale program_options random regex serialization system test thread
+EXTRA_CPPFLAGS = -DBOOST_AC_USE_PTHREADS -DBOOST_SP_USE_PTHREADS -stdlib=libc++ -std=c++17
+BOOST_LIBS = atomic date_time exception filesystem locale program_options random regex serialization system test thread chrono
 JAM_PROPERTIES =
 
 #
