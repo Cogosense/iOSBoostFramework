@@ -75,7 +75,7 @@ WFLAGS = -Wall -pedantic -Wno-unused-variable
 #
 EXTRA_CPPFLAGS = -DBOOST_AC_USE_PTHREADS -DBOOST_SP_USE_PTHREADS -stdlib=libc++ -std=c++17
 BOOST_LIBS = atomic date_time exception filesystem locale program_options random regex serialization system test thread chrono
-JAM_PROPERTIES =
+JAM_PROPERTIES = visibility=global
 
 #
 # set minimum iOS version supported
