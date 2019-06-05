@@ -1,6 +1,15 @@
 diff -ru boost_1_68_0/tools/build/src/tools/gcc.jam boost_1_68_0.patched/tools/build/src/tools/gcc.jam
 --- boost_1_68_0/tools/build/src/tools/gcc.jam	2018-08-01 13:50:55.000000000 -0700
 +++ boost_1_68_0.patched/tools/build/src/tools/gcc.jam	2018-10-19 15:51:06.000000000 -0700
+@@ -461,7 +461,7 @@
+
+     local no-threading = android beos haiku sgi darwin vxworks ;
+     local threading-generic-os = [ set.difference $(all-os) : $(no-threading) $(bsd) windows cygwin solaris ] ;
+-    threading-flags <target-os>$(threading-generic-os) : -pthread : rt ;
++    threading-flags <target-os>$(threading-generic-os) : -pthread ;
+ }
+
+ {
 @@ -925,9 +925,8 @@
      toolset.flags gcc.link RPATH <target-os>$(generic-os) : <dll-path> ;
      toolset.flags gcc.link RPATH_OPTION <target-os>$(generic-os) : -rpath ;
