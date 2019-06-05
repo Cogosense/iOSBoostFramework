@@ -123,6 +123,7 @@ comma:= ,
 	all \
 	build \
 	install \
+	carthage \
 	clean \
 	build-commence \
 	build-complete \
@@ -141,6 +142,10 @@ all : build
 build : build-commence dirs tarball bootstrap jams builds bundle build-complete
 
 install : install-commence dirs tarball bootstrap jams builds bundle install-complete
+
+carthage:
+	carthage build --no-skip-current
+	carthage archive
 
 clean :
 	$(RM) -r $(BUILT_PRODUCTS_DIR)
