@@ -107,11 +107,21 @@ node('osx && ios') {
 }
 
 def getUtils() {
-    // Load the SCM util scripts first
-    checkout([$class: 'GitSCM',
-        branches: [[name: "*/${env.BRANCH_NAME}"]],
-        doGenerateSubmoduleConfigurations: false,
-        extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'utils']],
-        submoduleCfg: [],
-        userRemoteConfigs: [[url: 'git@github.com:Cogosense/JenkinsUtils.git', credentialsId: '38bf8b09-9e52-421a-a8ed-5280fcb921af']]])
+    try {
+        // Load the SCM util scripts first using the branch name of the main repo
+        checkout([$class: 'GitSCM',
+            branches: [[name: "*/${env.BRANCH_NAME}"]],
+            doGenerateSubmoduleConfigurations: false,
+            extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'utils']],
+            submoduleCfg: [],
+            userRemoteConfigs: [[url: 'git@github.com:Cogosense/JenkinsUtils.git', credentialsId: '38bf8b09-9e52-421a-a8ed-5280fcb921af']]])
+    } catch(err) {
+        // Load the SCM util scripts falling back to the master branch
+        checkout([$class: 'GitSCM',
+            branches: [[name: "*/master"]],
+            doGenerateSubmoduleConfigurations: false,
+            extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'utils']],
+            submoduleCfg: [],
+            userRemoteConfigs: [[url: 'git@github.com:Cogosense/JenkinsUtils.git', credentialsId: '38bf8b09-9e52-421a-a8ed-5280fcb921af']]])
+    }
 }
