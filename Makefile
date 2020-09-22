@@ -24,7 +24,7 @@ SHELL = /bin/bash
 #
 # library to be built
 NAME = boost
-VERSION = 1_70_0
+VERSION = 1_73_0
 
 #
 # Download location URL
@@ -83,7 +83,7 @@ JAM_PROPERTIES = visibility=global
 ifneq "$(IPHONEOS_DEPLOYMENT_TARGET)" ""
     MIN_IOS_VER = $(IPHONEOS_DEPLOYMENT_TARGET)
 else
-    MIN_IOS_VER = 8.0
+    MIN_IOS_VER = 10.0
 endif
 
 #
