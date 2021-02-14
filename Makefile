@@ -60,6 +60,7 @@ X86_64_ARCH = x86_64
 #
 IPHONEOS_SDK_ROOT := $(shell xcrun --sdk iphoneos --show-sdk-platform-path)
 IPHONESIMULATOR_SDK_ROOT := $(shell xcrun --sdk iphonesimulator --show-sdk-platform-path)
+MACOS_SDK_ROOT := $(shell xcrun --sdk macosx --show-sdk-platform-path)
 
 #
 # set or unset warning flags
@@ -86,17 +87,22 @@ else
     MIN_IOS_VER = 8.0
 endif
 
+X86_64_OS = iphonesimulator
+ifeq "$(OS)" "macos"
+	X86_64_OS = macosx
+endif
+
 #
 # enable bitcode support
 #
-ifeq "$(ENABLE_BITCODE)" "YES"
-    ifeq "$(BITCODE_GENERATION_MODE)" "marker"
-	XCODE_BITCODE_FLAG = -fembed-bitcode-marker
-    endif
-    ifeq "$(BITCODE_GENERATION_MODE)" "bitcode"
-	XCODE_BITCODE_FLAG = -fembed-bitcode
-    endif
-endif
+#ifeq "$(ENABLE_BITCODE)" "YES"
+#    ifeq "$(BITCODE_GENERATION_MODE)" "marker"
+#	XCODE_BITCODE_FLAG = -fembed-bitcode-marker
+#    endif
+#    ifeq "$(BITCODE_GENERATION_MODE)" "bitcode"
+XCODE_BITCODE_FLAG = -fembed-bitcode
+#    endif
+#endif
 
 #
 # ARCHS and BUILT_PRODUCTS_DIR are set by xcode
@@ -266,8 +272,7 @@ $(eval $(call configure_template,iphoneos,$(ARM_V7_ARCH),arm))
 $(eval $(call configure_template,iphoneos,$(ARM_V7S_ARCH),arm))
 $(eval $(call configure_template,iphoneos,$(ARM_64_ARCH),arm64))
 $(eval $(call configure_template,iphonesimulator,$(I386_ARCH),x86))
-$(eval $(call configure_template,iphonesimulator,$(X86_64_ARCH),x86_64))
-
+$(eval $(call configure_template,$(X86_64_OS),$(X86_64_ARCH),x86_64))
 FIRST_ARCH = $(firstword $(ARCHS))
 
 .PHONY : bundle-dirs bundle-headers bundle-rm-fat-library bundle-info

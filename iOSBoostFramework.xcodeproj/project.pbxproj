@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXFileReference section */
+		4A9D4CAE25D9D004009F6004 /* Makefile */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
 		F1AB372A21840B40000DB450 /* boost.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = boost.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		F1AB372C21840B40000DB450 /* boost.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = boost.h; sourceTree = "<group>"; };
 		F1AB372D21840B40000DB450 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -36,6 +37,7 @@
 			isa = PBXGroup;
 			children = (
 				F1AB372A21840B40000DB450 /* boost.framework */,
+				4A9D4CAE25D9D004009F6004 /* Makefile */,
 				F1AB372B21840B40000DB450 /* boost */,
 			);
 			sourceTree = "<group>";
@@ -112,6 +114,7 @@
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
 			knownRegions = (
+				English,
 				en,
 			);
 			mainGroup = F1C800211D2F07F2004CFAAB;
