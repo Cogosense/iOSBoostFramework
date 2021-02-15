@@ -274,9 +274,8 @@ endef
 $(eval $(call configure_template,iphoneos,$(ARM_V7_ARCH),arm))
 $(eval $(call configure_template,iphoneos,$(ARM_V7S_ARCH),arm))
 $(eval $(call configure_template,iphoneos,$(ARM_64_ARCH),arm64))
-#$(eval $(call configure_template,iphonesimulator,$(I386_ARCH),x86))
+$(eval $(call configure_template,iphonesimulator,$(I386_ARCH),x86))
 $(eval $(call configure_template,$(X86_64_OS),$(X86_64_ARCH),x86_64))
-#$(eval $(call configure_template,macosx,$(X86_64_ARCH),x86_64))
 FIRST_ARCH = $(firstword $(ARCHS))
 
 .PHONY : bundle-dirs bundle-headers bundle-rm-fat-library bundle-info
