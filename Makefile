@@ -88,8 +88,14 @@ else
 endif
 
 X86_64_OS = iphonesimulator
+OS_FLAGS = -miphoneos-version-min=$$(MIN_IOS_VER)
+TARGET_OS = iphone
+SDK = iphoneos
 ifeq "$(OS)" "macos"
 	X86_64_OS = macosx
+	OS_FLAGS = -g -fvisibility=hidden -fvisibility-inlines-hidden
+	TARGET_OS = darwin
+	SDK = macosx
 endif
 
 #
@@ -228,7 +234,7 @@ $(MAKER_BUILD_DIR)/$(2) :
 $(MAKER_BUILD_DIR)/$(2)/user-config.jam :
 	echo using clang-darwin : $(3) > $$@
 	echo "    : xcrun --sdk $(1) clang++" >> $$@
-	echo "    : <cxxflags>\"-miphoneos-version-min=$$(MIN_IOS_VER) $$(XCODE_BITCODE_FLAG) -arch $(2) $$(EXTRA_CPPFLAGS) $$(JAM_DEFINES) $$(WFLAGS)\"" >> $$@
+	echo "    : <cxxflags>\"$$(OS_FLAGS) $$(XCODE_BITCODE_FLAG) -arch $(2) $$(EXTRA_CPPFLAGS) $$(JAM_DEFINES) $$(WFLAGS)\"" >> $$@
 	echo "      <linkflags>\"-arch $(2)\"" >> $$@
 	echo "      <striper>" >> $$@
 	echo "    ;" >> $$@
@@ -241,7 +247,7 @@ $(MAKER_BUILDROOT_DIR)/$(2)/$(FRAMEWORKBUNDLE)$(INSTALLED_LIB) :
 	cd $(PKGSRCDIR) && \
 	PATH=usr/local/bin:/usr/bin:/bin ; \
 	BOOST_BUILD_USER_CONFIG=$(MAKER_BUILD_DIR)/$(2)/user-config.jam \
-	./b2 --build-dir="$$$$builddir" --prefix="$$$$installdir" $$(JAM_OPTIONS) toolset=clang-darwin-$(3) target-os=iphone warnings=off link=static $$(JAM_PROPERTIES) install && \
+	./b2 --build-dir="$$$$builddir" --prefix="$$$$installdir" $$(JAM_OPTIONS) toolset=clang-darwin-$(3) target-os=$$(TARGET_OS) warnings=off link=static $$(JAM_PROPERTIES) install && \
 	cd $$$$installdir/lib && printf "[$(2)] extracting... " && \
 	for ar in `find . -name "*.a"` ; do \
 	    boostlib=`basename $$$$ar` ; \
@@ -271,8 +277,9 @@ endef
 $(eval $(call configure_template,iphoneos,$(ARM_V7_ARCH),arm))
 $(eval $(call configure_template,iphoneos,$(ARM_V7S_ARCH),arm))
 $(eval $(call configure_template,iphoneos,$(ARM_64_ARCH),arm64))
-$(eval $(call configure_template,iphonesimulator,$(I386_ARCH),x86))
+#$(eval $(call configure_template,iphonesimulator,$(I386_ARCH),x86))
 $(eval $(call configure_template,$(X86_64_OS),$(X86_64_ARCH),x86_64))
+#$(eval $(call configure_template,macosx,$(X86_64_ARCH),x86_64))
 FIRST_ARCH = $(firstword $(ARCHS))
 
 .PHONY : bundle-dirs bundle-headers bundle-rm-fat-library bundle-info
@@ -318,7 +325,7 @@ bundle-rm-fat-library :
 	$(RM) $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/$(FRAMEWORK_NAME)
 
 $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/$(FRAMEWORK_NAME) : $(addprefix $(MAKER_BUILDROOT_DIR)/, $(addsuffix /$(FRAMEWORKBUNDLE)$(INSTALLED_LIB),$(ARCHS)))
-	xcrun -sdk iphoneos lipo -create $^ -o $@
+	xcrun -sdk $(SDK) lipo -create $^ -o $@
 
 $(FRAMEWORKBUNDLE).tar.bz2 :
 	$(RM) $(FRAMEWORKBUNDLE).tar.bz2
