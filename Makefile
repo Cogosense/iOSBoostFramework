@@ -88,7 +88,7 @@ else
 endif
 
 X86_64_OS = iphonesimulator
-OS_FLAGS = -miphoneos-version-min=$$(MIN_IOS_VER)
+OS_FLAGS = -miphoneos-version-min=$(MIN_IOS_VER)
 TARGET_OS = iphone
 SDK = iphoneos
 ifeq "$(OS)" "macos"
@@ -187,10 +187,7 @@ $(MAKER_ARCHIVES_DIR) $(MAKER_SOURCES_DIR) $(MAKER_BUILD_DIR) $(MAKER_BUILDROOT_
 tarball : dirs $(MAKER_ARCHIVES_DIR)/$(TARBALL)
 
 $(MAKER_ARCHIVES_DIR)/$(TARBALL) :
-	curl -L --retry 10 -s -o $@ $(DOWNLOAD_URL) || { \
-	    $(RM) $@ ; \
-	    exit 1 ; \
-	}
+	cp *.bz2 $(MAKER_ARCHIVES_DIR)
 
 bootstrap : dirs tarball $(PKGSRCDIR)/bootstrap.sh
 
