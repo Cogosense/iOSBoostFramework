@@ -8,9 +8,11 @@
 
 /* Begin PBXFileReference section */
 		4A9D4CAE25D9D004009F6004 /* Makefile */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
-		F1AB372A21840B40000DB450 /* boost.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = boost.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		F1AB372A21840B40000DB450 /* boost.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; name = boost.framework; path = "/Users/amraboelela/resources/iOSBoostFramework/build/Debug-iphoneos/boost.framework"; sourceTree = "<absolute>"; };
 		F1AB372C21840B40000DB450 /* boost.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = boost.h; sourceTree = "<group>"; };
 		F1AB372D21840B40000DB450 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		F56E3DDD25E1AE8C00527A3E /* build */ = {isa = PBXFileReference; lastKnownFileType = folder; path = build; sourceTree = "<group>"; };
+		F56E3DDE25E1B1BE00527A3E /* boost_1_70_0 */ = {isa = PBXFileReference; lastKnownFileType = folder; path = boost_1_70_0; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -36,8 +38,9 @@
 		F1C800211D2F07F2004CFAAB = {
 			isa = PBXGroup;
 			children = (
-				F1AB372A21840B40000DB450 /* boost.framework */,
 				4A9D4CAE25D9D004009F6004 /* Makefile */,
+				F56E3DDE25E1B1BE00527A3E /* boost_1_70_0 */,
+				F56E3DDD25E1AE8C00527A3E /* build */,
 				F1AB372B21840B40000DB450 /* boost */,
 			);
 			sourceTree = "<group>";

@@ -29,9 +29,10 @@ VERSION = 1_70_0
 #
 # Download location URL
 #
-TARBALL = $(NAME)_$(VERSION).tar.bz2
+boostBundle = $(NAME)_$(VERSION)
+#TARBALL = $(boostBundle).tar.bz2
 VERSIONDIR = $(subst _,.,$(VERSION))
-DOWNLOAD_URL = http://sourceforge.net/projects/boost/files/boost/$(VERSIONDIR)/$(TARBALL)
+#DOWNLOAD_URL = http://sourceforge.net/projects/boost/files/boost/$(VERSIONDIR)/$(TARBALL)
 
 #
 # Files used to trigger builds for each architecture
@@ -123,7 +124,7 @@ MAKER_SOURCES_DIR = $(MAKER_DIR)/Sources
 MAKER_BUILD_DIR = $(MAKER_DIR)/Build
 MAKER_BUILDROOT_DIR = $(MAKER_DIR)/Buildroot
 
-PKGSRCDIR = $(MAKER_SOURCES_DIR)/$(NAME)_$(VERSION)
+PKGSRCDIR = $(MAKER_SOURCES_DIR)/$(boostBundle)
 
 FRAMEWORKBUNDLE = $(FRAMEWORK_NAME).framework
 
@@ -142,7 +143,6 @@ comma:= ,
 	install-commence i\
 	nstall-complete \
 	dirs \
-	tarball \
 	bootstrap \
 	jams \
 	$(addprefix Jam_, $(ARCHS)) \
@@ -151,9 +151,9 @@ comma:= ,
 
 all : build
 
-build : build-commence dirs tarball bootstrap jams builds bundle build-complete
+build : build-commence dirs bootstrap jams builds bundle build-complete
 
-install : install-commence dirs tarball bootstrap jams builds bundle install-complete
+install : install-commence dirs bootstrap jams builds bundle install-complete
 
 carthage:
 	carthage build --no-skip-current
@@ -184,24 +184,26 @@ dirs : $(MAKER_ARCHIVES_DIR) $(MAKER_SOURCES_DIR) $(MAKER_BUILD_DIR) $(MAKER_BUI
 $(MAKER_ARCHIVES_DIR) $(MAKER_SOURCES_DIR) $(MAKER_BUILD_DIR) $(MAKER_BUILDROOT_DIR) :
 	mkdir -p $@
 
-tarball : dirs $(MAKER_ARCHIVES_DIR)/$(TARBALL)
+#tarball : dirs $(MAKER_ARCHIVES_DIR)/$(TARBALL)
 
-$(MAKER_ARCHIVES_DIR)/$(TARBALL) :
-	cp *.bz2 $(MAKER_ARCHIVES_DIR)
+#$(MAKER_ARCHIVES_DIR)/$(TARBALL) :
+#	cp *.bz2 $(MAKER_ARCHIVES_DIR)
 
-bootstrap : dirs tarball $(PKGSRCDIR)/bootstrap.sh
+bootstrap : dirs $(PKGSRCDIR)/bootstrap.sh
 
 $(PKGSRCDIR)/bootstrap.sh :
-	tar -C $(MAKER_SOURCES_DIR) -xmf $(MAKER_ARCHIVES_DIR)/$(TARBALL)
-	if [ -d patches/$(VERSION) ] ; then \
-	    for p in patches/$(VERSION)/* ; do \
-		if [ -f $$p ] ; then \
-		    patch -d $(PKGSRCDIR) -p1 < $$p ; \
-		fi ; \
-	    done ; \
-	fi
+	rm -rf $(MAKER_SOURCES_DIR)/*
+	cp $(boostBundle) $(MAKER_SOURCES_DIR)
+	#tar -C $(MAKER_SOURCES_DIR) -xmf $(MAKER_ARCHIVES_DIR)/$(TARBALL)
+	#if [ -d patches/$(VERSION) ] ; then \
+	#    for p in patches/$(VERSION)/* ; do \
+	#	if [ -f $$p ] ; then \
+	#	    patch -d $(PKGSRCDIR) -p1 < $$p ; \
+	#	fi ; \
+	#    done ; \
+	#fi
 
-jams : dirs tarball bootstrap $(addprefix Jam_, $(ARCHS)) $(PKGSRCDIR)/b2
+jams : dirs bootstrap $(addprefix Jam_, $(ARCHS)) $(PKGSRCDIR)/b2
 
 #
 # bjam source code is not c99 compatible, setting iOS9.3
@@ -214,7 +216,7 @@ $(PKGSRCDIR)/b2 : $(PKGSRCDIR)/bootstrap.sh
 	export PATH=usr/local/bin:/usr/bin:/bin ; \
 	cd $(PKGSRCDIR) && ./bootstrap.sh --with-libraries=$(subst $(space),$(comma),$(BOOST_LIBS))
 
-builds : dirs tarball bootstrap jams $(addprefix Build_, $(ARCHS))
+builds : dirs bootstrap jams $(addprefix Build_, $(ARCHS))
 
 #
 # $1 - sdk (iphoneos or iphonesimulator)
