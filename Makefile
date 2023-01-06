@@ -64,7 +64,7 @@ IPHONESIMULATOR_SDK_ROOT := $(shell xcrun --sdk iphonesimulator --show-sdk-platf
 #
 # set or unset warning flags
 #
-WFLAGS = -Wall -pedantic -Wno-unused-variable
+WFLAGS = -Wall -pedantic -Wno-unused-variable -Wno-deprecated-declarations
 
 #
 # The following options must be the same for all projects that
@@ -83,7 +83,7 @@ JAM_PROPERTIES = visibility=global
 ifneq "$(IPHONEOS_DEPLOYMENT_TARGET)" ""
     MIN_IOS_VER = $(IPHONEOS_DEPLOYMENT_TARGET)
 else
-    MIN_IOS_VER = 10.0
+    MIN_IOS_VER = 11.0
 endif
 
 #
@@ -203,7 +203,7 @@ $(PKGSRCDIR)/b2 : $(PKGSRCDIR)/bootstrap.sh
 	unset IPHONEOS_DEPLOYMENT_TARGET ;\
 	unset SDKROOT ;\
 	export PATH=usr/local/bin:/usr/bin:/bin ; \
-	cd $(PKGSRCDIR) && ./bootstrap.sh --with-libraries=$(subst $(space),$(comma),$(BOOST_LIBS))
+	cd $(PKGSRCDIR) && CXXFLAGS="$(WFLAGS)" ./bootstrap.sh --with-libraries=$(subst $(space),$(comma),$(BOOST_LIBS))
 
 builds : dirs tarball bootstrap jams $(addprefix Build_, $(ARCHS))
 

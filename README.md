@@ -2,7 +2,8 @@
 
 More information on the [Boost home page](http://www.boost.org/)
 
-The Makefile in this project creates a fat iOS framework bundle that supports one or more of the following architectures:
+The Makefile in this project creates a fat iOS framework bundle that
+supports one or more of the following architectures:
 
 * arm64
 * armv7
@@ -10,7 +11,10 @@ The Makefile in this project creates a fat iOS framework bundle that supports on
 * i386
 * x86_64
 
-It is suitable for using on all iOS devices newer than iPhone3GS and simulators.
+It is suitable for using on all iOS devices support iOS 11 and greater.
+
+Note: The latest release 1.73.0 does not support MacOS Apple Silicon. This
+will be in the next release.
 
 ## Supported Libraries
 
