@@ -1,20 +1,20 @@
 #
-# supports architectures armv7, armv7s, arm64, i386, x86_64 and bitcode
+# supports architectures arm64, x86_64 and bitcode
 #
 # make - build a fat archive framework using $ARCHS, if $ARCHS is empty all architectures are built (device and simulator)
-# make ARCHS=i386   \
+#                   \
 # make ARCHS=x86_64  |
-# make ARCHS=armv7    > build a thin archive framework with named architecture
-# make ARCHS=armv7s  |
+#                     > build a thin archive framework with named architecture
+#                    |
 # make ARCHS=arm64  /
-# make ARCHS='i386 x86_64' - bulid a fat archive framework with only the named architectures
+# make ARCHS='x86_64' - bulid a fat archive framework with only the named architectures
 #
 # From xcode build script:
 # make ARCHS=${ARCHS} - build all active architectures
 #
 # Xcode bitcode support:
-# make ARCHS="armv7 arm64" ENABLE_BITCODE=YES BITCODE_GENERATION_MODE=bitcode - create bitcode
-# make ARCHS="armv7 arm64" ENABLE_BITCODE=YES BITCODE_GENERATION_MODE=marker - add bitcode marker (but no real bitcode)
+# make ARCHS="arm64" ENABLE_BITCODE=YES BITCODE_GENERATION_MODE=bitcode - create bitcode
+# make ARCHS="arm64" ENABLE_BITCODE=YES BITCODE_GENERATION_MODE=marker - add bitcode marker (but no real bitcode)
 #
 # The ENABLE_BITCODE and BITCODE_GENERATION_MODE flags are set in the Xcode project settings
 #
@@ -49,10 +49,7 @@ FRAMEWORK_NAME = $(NAME)
 #
 # The supported Xcode build architectures
 #
-ARM_V7_ARCH = armv7
-ARM_V7S_ARCH = armv7s
 ARM_64_ARCH = arm64
-I386_ARCH = i386
 X86_64_ARCH = x86_64
 
 #
@@ -102,7 +99,7 @@ endif
 # ARCHS and BUILT_PRODUCTS_DIR are set by xcode
 # only set them if make is invoked directly
 #
-ARCHS ?= $(ARM_V7_ARCH) $(ARM_V7S_ARCH) $(ARM_64_ARCH) $(I386_ARCH) $(X86_64_ARCH)
+ARCHS ?= $(ARM_64_ARCH) $(X86_64_ARCH)
 BUILT_PRODUCTS_DIR ?= $(CURDIR)/build
 
 MAKER_DIR = $(BUILT_PRODUCTS_DIR)/Maker
@@ -209,8 +206,8 @@ builds : dirs tarball bootstrap jams $(addprefix Build_, $(ARCHS))
 
 #
 # $1 - sdk (iphoneos or iphonesimulator)
-# $2 - xcode architecture (armv7, armv7s, arm64, i386, x86_64)
-# $3 - boost toolchain architecture (arm, arm64, x86, x86_64)
+# $2 - xcode architecture (arm64, x86_64)
+# $3 - boost toolchain architecture (arm64, x86_64)
 #
 define configure_template
 
@@ -262,10 +259,7 @@ $(MAKER_BUILDROOT_DIR)/$(2)/$(FRAMEWORKBUNDLE)$(INSTALLED_LIB) :
 
 endef
 
-$(eval $(call configure_template,iphoneos,$(ARM_V7_ARCH),arm))
-$(eval $(call configure_template,iphoneos,$(ARM_V7S_ARCH),arm))
 $(eval $(call configure_template,iphoneos,$(ARM_64_ARCH),arm64))
-$(eval $(call configure_template,iphonesimulator,$(I386_ARCH),x86))
 $(eval $(call configure_template,iphonesimulator,$(X86_64_ARCH),x86_64))
 
 FIRST_ARCH = $(firstword $(ARCHS))

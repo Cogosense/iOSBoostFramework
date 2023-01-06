@@ -6,12 +6,12 @@ The Makefile in this project creates a fat iOS framework bundle that
 supports one or more of the following architectures:
 
 * arm64
-* armv7
-* armv7s
-* i386
 * x86_64
 
 It is suitable for using on all iOS devices support iOS 11 and greater.
+
+Xcode14 has removed support for 32bit compilation, so the armv7 device and
+i386 simulator architecture have been removed.
 
 Note: The latest release 1.73.0 does not support MacOS Apple Silicon. This
 will be in the next release.

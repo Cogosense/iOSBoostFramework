@@ -50,40 +50,23 @@ node('osx && ios') {
 
         stage ('Build Parallel') {
             stash name: 'Makefile', includes: 'Makefile,boost/**,patches/**'
-            parallel (
-                "armv7" : {
-                    node('osx && ios') {
-                        // Accept the license on first install and updates
-                        Utils.&acceptXcodeLicense()
-                        // clean workspace
-                        deleteDir()
-                        unstash 'Makefile'
-                        sh 'make clean'
-                        sh 'make ENABLE_BITCODE=YES BITCODE_GENERATION_MODE=bitcode ARCHS=armv7'
-                        stash name: 'armv7', includes: '**/armv7/boost.framework/**'
-                    }
-                },
-                "arm64" : {
-                    node('osx && ios') {
-                        // Accept the license on first install and updates
-                        Utils.&acceptXcodeLicense()
-                        // clean workspace
-                        deleteDir()
-                        unstash 'Makefile'
-                        sh 'make clean'
-                        sh 'make ENABLE_BITCODE=YES BITCODE_GENERATION_MODE=bitcode ARCHS=arm64'
-                        stash name: 'arm64', includes: '**/arm64/boost.framework/**'
-                    }
-                }
-            )
+            node('osx && ios') {
+                // Accept the license on first install and updates
+                Utils.&acceptXcodeLicense()
+                // clean workspace
+                deleteDir()
+                unstash 'Makefile'
+                sh 'make clean'
+                sh 'make ENABLE_BITCODE=YES BITCODE_GENERATION_MODE=bitcode ARCHS=arm64'
+                stash name: 'arm64', includes: '**/arm64/boost.framework/**'
+            }
         }
 
         stage ('Assemble Framework') {
-            unstash 'armv7'
             unstash 'arm64'
             // Accept the license on first install and updates
             Utils.&acceptXcodeLicense()
-            sh 'make ARCHS="armv7 arm64" bundle'
+            sh 'make ARCHS="arm64" bundle'
         }
 
         stage ('Archive Artifacts') {
