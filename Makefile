@@ -37,13 +37,16 @@ GITCOMMIT ?= $(shell which git > /dev/null && git rev-parse --verify -q HEAD || 
 # library to be built
 NAME = boost
 BOOST_VERSION = 1_81_0
-VERSION =  $(subst _,.,$(BOOST_VERSION))
+#
+# Release version on GitHub - bump last digit to make new
+# GitHub release with same Boost version.
+VERSION =  1.81.0
 
 #
 # Download location URL
 #
 TARBALL = $(NAME)_$(BOOST_VERSION).tar.bz2
-DOWNLOAD_URL = http://sourceforge.net/projects/boost/files/boost/$(VERSION)/$(TARBALL)
+DOWNLOAD_URL = http://sourceforge.net/projects/boost/files/boost/$(subst _,.,$(BOOST_VERSION))/$(TARBALL)
 
 #
 # Files used to trigger builds for each architecture
@@ -371,11 +374,12 @@ $(XCFRAMEWORKBUNDLE).zip : $(BUILT_PRODUCTS_DIR)/$(XCFRAMEWORKBUNDLE)
 .PHONY : release update-spm
 
 release : $(XCFRAMEWORKBUNDLE).zip update-spm
-	[ $(GITBRANCH) == 'master' ] || exit 0
-	git commit -m "Update SPM to version $(VERSION)" Package.swift ; \
-	git tag -am "Release Boost for iOS v$(VERSION)" $(VERSION) ; \
-	git push --follow-tags ; \
-	gh release create "$(VERSION)" --generate-notes $(XCFRAMEWORKBUNDLE).zip
+	[ $(GITBRANCH) == 'master' ] && { \
+		git commit -m "Update SPM to version $(VERSION)" Package.swift ; \
+		git tag -am "Release Boost for iOS v$(VERSION)" $(VERSION) ; \
+		git push HEAD:master --follow-tags ; \
+		gh release create "$(VERSION)" --generate-notes $(XCFRAMEWORKBUNDLE).zip ; \
+	} || :
 
 update-spm :  $(XCFRAMEWORKBUNDLE).zip
 	CHKSUM=$$(swift package compute-checksum $<) ; \

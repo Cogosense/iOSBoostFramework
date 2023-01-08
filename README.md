@@ -2,19 +2,36 @@
 
 More information on the [Boost home page](http://www.boost.org/)
 
-The Makefile in this project creates a fat iOS framework bundle that
-supports one or more of the following architectures:
+## Distribution
 
-* arm64
-* x86_64
+The frameworks are distributed using the following methods:
 
-It is suitable for using on all iOS devices support iOS 11 and greater.
+* As a binary XCFramework using Swift Package Manager
+* As a binary XCFramework using carthage
+* The iOSBoostFramework project can be included into an Xcode workspace
+
+SPM is now the preferred method. Other methods will be deprecated in the next
+major release.
+
+## Platform Support
+
+The Makefile in this project creates a iOS XCframework bundle that
+supports the following platforms:
+
+* iphoneos arm64
+* iphonesimulator x86_64
+* iphonesimulator arm64
+
+It is suitable for using on all iOS devices and simulators that support
+iOS 11 and greater.
+
+## Xcode Support
 
 Xcode14 has removed support for 32bit compilation, so the armv7 device and
 i386 simulator architecture have been removed.
 
-Note: The latest release 1.73.0 does not support MacOS Apple Silicon. This
-will be in the next release.
+Note: The latest release 1.81.0 is the first release to support MacOS
+Apple Silicon development simulators.
 
 ## Supported Libraries
 
@@ -34,16 +51,45 @@ The following boost libraries are built
 * random
 * locale
 
-The locale library has the POSIX option turned on and the libiconv library supplied with iOS is used.
+The locale library has the POSIX option turned on and the libiconv library
+supplied with iOS is used.
 
 ## Bitcode
 
-The Makefile supports bitcode generation for release builds. Debug builds use a bitcode-marker. Bitcode generation is controlled by the build variable
-**ENABLE_BITCODE** and the mode is controlled by the build variable **BITCODE_GENERATION_MODE**.
+The Makefile supports bitcode generation for release builds. Debug builds use
+a bitcode-marker. Bitcode generation is controlled by the build variable
+**ENABLE_BITCODE** and the mode is controlled by the build variable
+**BITCODE_GENERATION_MODE**.
+
+## SDK
+
+The iphoneos and iphonesimulator SDKs are currently supported. Using the
+XCFramework, a single binary can be created that supports ARM devices and
+ARM and x86_64 simulators in a single framework bundle.
+
+To build a device framework only:
+
+    make
+    make xcframework
+
+To build a universal XCframework:
+
+    make SDK=iphoneos
+    make SDK=iphonesimulator
+    make xcframework
 
 ## Active Architectures
 
-When used in conjunction with an Xcode workspace, only the active architecture is built. This is specified by Xcode using the **ARCHS** build variable.
+When used in conjunction with an Xcode workspace, only the active architecture
+is built. This is specified by Xcode using the **ARCHS** build variable.
+
+## Support for Swift Package Manager
+
+The new XCframework is distributed as a binary framework. Use the Xcode
+packages to include it into a project.
+See [Addingpackage dependencies to your app](https://developer.apple.com/documentation/xcode/adding-package-dependencies-to-your-app)
+
+
 
 ## Support for Xcode Workspaces
 
@@ -69,12 +115,4 @@ More details on adding frameworks to a project can be found [here](https://githu
 
 ## Legacy Makefile (deprecated)
 
-**Makefile.legacy** is the original Makefile. It supports boost v1.68.0 and won't be updated any further.
-
-To continue using the legacy Makefile use the **-f** option to make.
-
-    make -f Makefile.legacy build
-
-The xcodeproj file still contains the External Build Tool target **boost.framework** which
-invokes make with the **-f Makefile.legacy** option. Existing usage of this project should continue
-to work.
+This has now been removed - the last version to support it was 1.73.0.
