@@ -1,4 +1,5 @@
 # A Boost library framework for iOS [![Carthage compatible](https://img.shields.io/badge/Carthage-compatible-4BC51D.svg?style=flat)](https://github.com/Carthage/Carthage)
+[![SPM compatible](https://img.shields.io/badge/platform-iphoneos%20iphonesimulator%20macosx-blue)](https://developer.apple.com/documentation/xcode/adding-package-dependencies-to-your-app)
 
 More information on the [Boost home page](http://www.boost.org/)
 
@@ -12,6 +13,9 @@ The frameworks are distributed using the following methods:
 
 SPM is now the preferred method. Other methods will be deprecated in the next
 major release.
+
+To add the swift package use the package URL
+https://github.com/Cogosense/iOSBoostFramework and set the version to >= 1.80.0
 
 ## Platform Support
 
