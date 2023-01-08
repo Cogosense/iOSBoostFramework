@@ -64,6 +64,7 @@ FRAMEWORK_NAME = $(NAME)
 #
 # The supported Xcode SDKs
 #
+MACOSX_SDK = macosx
 IPHONEOS_SDK = iphoneos
 IPHONESIMULATOR_SDK = iphonesimulator
 
@@ -90,12 +91,21 @@ BOOST_LIBS = atomic date_time exception filesystem locale program_options random
 JAM_PROPERTIES = visibility=global
 
 #
+# set minimum MacOSX version supported
+#
+ifneq "$(IPHONEOS_DEPLOYMENT_TARGET)" ""
+    MIN_OS_VER = $(MACOSX_DEPLOYMENT_TARGET)
+else
+    MIN_OS_VER = 10.0
+endif
+
+#
 # set minimum iOS version supported
 #
 ifneq "$(IPHONEOS_DEPLOYMENT_TARGET)" ""
-    MIN_IOS_VER = $(IPHONEOS_DEPLOYMENT_TARGET)
+    MIN_OS_VER = $(IPHONEOS_DEPLOYMENT_TARGET)
 else
-    MIN_IOS_VER = 11.0
+    MIN_OS_VER = 11.0
 endif
 
 #
@@ -121,8 +131,12 @@ else
 	ifneq ($(findstring $(IPHONESIMULATOR_SDK), $(SDK_NAME)),)
 		SDK = $(IPHONESIMULATOR_SDK)
 	else
-		ifneq ($(SDK_NAME),)
-			SDK = $(SDK_NAME)
+		ifneq ($(findstring $(MACOSX_SDK), $(SDK_NAME)),)
+			SDK = $(MACOSX_SDK)
+		else
+			ifneq ($(SDK_NAME),)
+				SDK = $(SDK_NAME)
+			endif
 		endif
 	endif
 endif
@@ -136,7 +150,12 @@ else
 		SDK = $(IPHONESIMULATOR_SDK)
 		ARCHS ?= $(ARM_64_ARCH) $(X86_64_ARCH)
 	else
+		ifeq ($(SDK),$(MACOSX_SDK))
+			SDK = $(MACOSX_SDK)
+			ARCHS ?= $(ARM_64_ARCH) $(X86_64_ARCH)
+		else
 $(error unsupported sdk: $(SDK))
+		endif
 	endif
 endif
 
@@ -262,7 +281,7 @@ $(MAKER_BUILD_DIR)/$(1)/$(2) :
 $(MAKER_BUILD_DIR)/$(1)/$(2)/user-config.jam :
 	@echo using clang-darwin : $(3) > $$@
 	@echo "    : xcrun --sdk $(1) clang++" >> $$@
-	@echo "    : <cxxflags>\"-m$(1)-version-min=$$(MIN_IOS_VER) $$(XCODE_BITCODE_FLAG) -arch $(2) $$(EXTRA_CPPFLAGS) $$(JAM_DEFINES) $$(WFLAGS)\"" >> $$@
+	@echo "    : <cxxflags>\"-m$(1)-version-min=$$(MIN_OS_VER) $$(XCODE_BITCODE_FLAG) -arch $(2) $$(EXTRA_CPPFLAGS) $$(JAM_DEFINES) $$(WFLAGS)\"" >> $$@
 	@echo "      <linkflags>\"-arch $(2)\"" >> $$@
 	@echo "      <striper>" >> $$@
 	@echo "    ;" >> $$@
@@ -302,6 +321,8 @@ $(MAKER_BUILDROOT_DIR)/$(1)/$(2)/$(FRAMEWORKBUNDLE)$(INSTALLED_LIB) :
 
 endef
 
+$(eval $(call configure_template,$(MACOSX_SDK),$(ARM_64_ARCH),arm64))
+$(eval $(call configure_template,$(MACOSX_SDK),$(X86_64_ARCH),x86_64))
 $(eval $(call configure_template,$(IPHONEOS_SDK),$(ARM_64_ARCH),arm64))
 $(eval $(call configure_template,$(IPHONESIMULATOR_SDK),$(ARM_64_ARCH),arm64))
 $(eval $(call configure_template,$(IPHONESIMULATOR_SDK),$(X86_64_ARCH),x86_64))

@@ -51,6 +51,7 @@ node('osx && ios') {
         stage ('Build') {
             // Accept the license on first install and updates
             Utils.&acceptXcodeLicense()
+            sh 'make ENABLE_BITCODE=YES BITCODE_GENERATION_MODE=bitcode SDK=macosx'
             sh 'make ENABLE_BITCODE=YES BITCODE_GENERATION_MODE=bitcode SDK=iphoneos'
             sh 'make ENABLE_BITCODE=YES BITCODE_GENERATION_MODE=bitcode SDK=iphonesimulator'
         }
