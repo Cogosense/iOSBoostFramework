@@ -1,0 +1,30 @@
+Only in boost_1_81_0: INSTALL
+Only in boost_1_81_0: Jamroot
+Only in boost_1_81_0: LICENSE_1_0.txt
+Only in boost_1_81_0: README.md
+Only in boost_1_81_0: boost
+Only in boost_1_81_0: boost-build.jam
+Only in boost_1_81_0: boost.css
+Only in boost_1_81_0: boost.png
+Only in boost_1_81_0: boostcpp.jam
+Only in boost_1_81_0: bootstrap.bat
+diff -ru boost_1_81_0/bootstrap.sh boost_1_81_0.patched/bootstrap.sh
+--- boost_1_81_0/bootstrap.sh	2023-01-07 15:10:17
++++ boost_1_81_0.patched/bootstrap.sh	2023-01-07 15:12:05
+@@ -226,7 +226,7 @@
+ if test "x$BJAM" = x; then
+   $ECHO "Building B2 engine.."
+   pwd=`pwd`
+-  CXX= CXXFLAGS= "$my_dir/tools/build/src/engine/build.sh" ${TOOLSET}
++  CXX= "$my_dir/tools/build/src/engine/build.sh" --cxxflags="$CXXFLAGS" ${TOOLSET}
+   if [ $? -ne 0 ]; then
+       echo
+       echo "Failed to build B2 build engine"
+Only in boost_1_81_0: doc
+Only in boost_1_81_0: index.htm
+Only in boost_1_81_0: index.html
+Only in boost_1_81_0: libs
+Only in boost_1_81_0: more
+Only in boost_1_81_0: rst.css
+Only in boost_1_81_0: status
+Only in boost_1_81_0: tools

@@ -21,17 +21,29 @@
 
 SHELL = /bin/bash
 
+V ?= 0
+at = @
+ifeq ($(V),1)
+	at =
+endif
+
+#
+# Repository info
+#
+GITBRANCH ?= $(shell which git > /dev/null && git rev-parse --abbrev-ref --verify -q HEAD || echo "unknown")
+GITCOMMIT ?= $(shell which git > /dev/null && git rev-parse --verify -q HEAD || echo "unknown")
+
 #
 # library to be built
 NAME = boost
-VERSION = 1_73_0
+BOOST_VERSION = 1_81_0
+VERSION =  $(subst _,.,$(BOOST_VERSION))
 
 #
 # Download location URL
 #
-TARBALL = $(NAME)_$(VERSION).tar.bz2
-VERSIONDIR = $(subst _,.,$(VERSION))
-DOWNLOAD_URL = http://sourceforge.net/projects/boost/files/boost/$(VERSIONDIR)/$(TARBALL)
+TARBALL = $(NAME)_$(BOOST_VERSION).tar.bz2
+DOWNLOAD_URL = http://sourceforge.net/projects/boost/files/boost/$(VERSION)/$(TARBALL)
 
 #
 # Files used to trigger builds for each architecture
@@ -47,16 +59,16 @@ INSTALLED_HEADER_DIR = /include/boost
 FRAMEWORK_NAME = $(NAME)
 
 #
+# The supported Xcode SDKs
+#
+IPHONEOS_SDK = iphoneos
+IPHONESIMULATOR_SDK = iphonesimulator
+
+#
 # The supported Xcode build architectures
 #
 ARM_64_ARCH = arm64
 X86_64_ARCH = x86_64
-
-#
-# SDK root directories
-#
-IPHONEOS_SDK_ROOT := $(shell xcrun --sdk iphoneos --show-sdk-platform-path)
-IPHONESIMULATOR_SDK_ROOT := $(shell xcrun --sdk iphonesimulator --show-sdk-platform-path)
 
 #
 # set or unset warning flags
@@ -96,10 +108,35 @@ ifeq "$(ENABLE_BITCODE)" "YES"
 endif
 
 #
-# ARCHS and BUILT_PRODUCTS_DIR are set by xcode
+# SDK_NAME, ARCHS and BUILT_PRODUCTS_DIR are set by xcode
 # only set them if make is invoked directly
 #
-ARCHS ?= $(ARM_64_ARCH) $(X86_64_ARCH)
+# build for device or simulator
+ifneq ($(findstring $(IPHONEOS_SDK), $(SDK_NAME)),)
+	SDK = $(IPHONEOS_SDK)
+else
+	ifneq ($(findstring $(IPHONESIMULATOR_SDK), $(SDK_NAME)),)
+		SDK = $(IPHONESIMULATOR_SDK)
+	else
+		ifneq ($(SDK_NAME),)
+			SDK = $(SDK_NAME)
+		endif
+	endif
+endif
+SDK ?= $(IPHONEOS_SDK)
+# build for device or simulator
+ifeq ($(SDK),$(IPHONEOS_SDK))
+	SDK = $(IPHONEOS_SDK)
+	ARCHS ?= $(ARM_64_ARCH)
+else
+	ifeq ($(SDK),$(IPHONESIMULATOR_SDK))
+		SDK = $(IPHONESIMULATOR_SDK)
+		ARCHS ?= $(ARM_64_ARCH) $(X86_64_ARCH)
+	else
+$(error unsupported sdk: $(SDK))
+	endif
+endif
+
 BUILT_PRODUCTS_DIR ?= $(CURDIR)/build
 
 MAKER_DIR = $(BUILT_PRODUCTS_DIR)/Maker
@@ -107,10 +144,12 @@ MAKER_ARCHIVES_DIR = $(MAKER_DIR)/Archives
 MAKER_SOURCES_DIR = $(MAKER_DIR)/Sources
 MAKER_BUILD_DIR = $(MAKER_DIR)/Build
 MAKER_BUILDROOT_DIR = $(MAKER_DIR)/Buildroot
+MAKER_INTERMEDIATE_DIR = $(MAKER_DIR)/Intermediate
 
-PKGSRCDIR = $(MAKER_SOURCES_DIR)/$(NAME)_$(VERSION)
+PKGSRCDIR = $(MAKER_SOURCES_DIR)/$(NAME)_$(BOOST_VERSION)
 
 FRAMEWORKBUNDLE = $(FRAMEWORK_NAME).framework
+XCFRAMEWORKBUNDLE = $(FRAMEWORK_NAME).xcframework
 
 empty:=
 space:= $(empty) $(empty)
@@ -130,9 +169,9 @@ comma:= ,
 	tarball \
 	bootstrap \
 	jams \
-	$(addprefix Jam_, $(ARCHS)) \
+	$(addprefix Jam_$(SDK)_, $(ARCHS)) \
 	builds \
-	$(addprefix Build_, $(ARCHS))
+	$(addprefix Build_$(SDK)_, $(ARCHS))
 
 all : build
 
@@ -148,31 +187,32 @@ clean :
 	$(RM) -r $(BUILT_PRODUCTS_DIR)
 	$(RM) -r DerivedData
 	$(RM) -r Carthage
-	$(RM) *.framework.tar.bz2
-	$(RM $(FRAMEWORK_NAME).zip
+	$(RM) *.xcframework.tar.bz2
+	$(RM) *.xcframework.tar.zip
 	$(RM) Info.plist
 
 build-commence :
-	@echo "Commencing debug build for framework: $(FRAMEWORK_NAME)"
+	@echo "Commencing debug build for SDK:$(SDK) ARCHS:\"$(ARCHS)\" framework: $(FRAMEWORK_NAME)"
 
 build-complete :
-	@echo "Completed debug build for framework: $(FRAMEWORK_NAME)"
+	@echo "Completed debug build for SDK:$(SDK) ARCHS:\"$(ARCHS)\" framework: $(FRAMEWORK_NAME)"
 
 install-commence :
-	@echo "Commencing release build for framework: $(FRAMEWORK_NAME)"
+	@echo "Commencing release build for SDK:$(SDK) ARCHS:\"$(ARCHS)\" framework: $(FRAMEWORK_NAME)"
 
 install-complete :
-	@echo "Completed release build for framework: $(FRAMEWORK_NAME)"
+	@echo "Completed release build for SDK:$(SDK) ARCHS:\"$(ARCHS)\" framework: $(FRAMEWORK_NAME)"
 
-dirs : $(MAKER_ARCHIVES_DIR) $(MAKER_SOURCES_DIR) $(MAKER_BUILD_DIR) $(MAKER_BUILDROOT_DIR)
+dirs : $(MAKER_ARCHIVES_DIR) $(MAKER_SOURCES_DIR) $(MAKER_BUILD_DIR) $(MAKER_BUILDROOT_DIR) $(MAKER_INTERMEDIATE_DIR)
 
-$(MAKER_ARCHIVES_DIR) $(MAKER_SOURCES_DIR) $(MAKER_BUILD_DIR) $(MAKER_BUILDROOT_DIR) :
-	mkdir -p $@
+$(MAKER_ARCHIVES_DIR) $(MAKER_SOURCES_DIR) $(MAKER_BUILD_DIR) $(MAKER_BUILDROOT_DIR) $(MAKER_INTERMEDIATE_DIR) :
+	@mkdir -p $@
 
 tarball : dirs $(MAKER_ARCHIVES_DIR)/$(TARBALL)
 
 $(MAKER_ARCHIVES_DIR)/$(TARBALL) :
-	curl -L --retry 10 -s -o $@ $(DOWNLOAD_URL) || { \
+	@echo "downloading $(DOWNLOAD_URL)"
+	$(at)curl -L --retry 10 -s -o $@ $(DOWNLOAD_URL) || { \
 	    $(RM) $@ ; \
 	    exit 1 ; \
 	}
@@ -181,15 +221,15 @@ bootstrap : dirs tarball $(PKGSRCDIR)/bootstrap.sh
 
 $(PKGSRCDIR)/bootstrap.sh :
 	tar -C $(MAKER_SOURCES_DIR) -xmf $(MAKER_ARCHIVES_DIR)/$(TARBALL)
-	if [ -d patches/$(VERSION) ] ; then \
-	    for p in patches/$(VERSION)/* ; do \
+	if [ -d patches/$(BOOST_VERSION) ] ; then \
+	    for p in patches/$(BOOST_VERSION)/* ; do \
 		if [ -f $$p ] ; then \
 		    patch -d $(PKGSRCDIR) -p1 < $$p ; \
 		fi ; \
 	    done ; \
 	fi
 
-jams : dirs tarball bootstrap $(addprefix Jam_, $(ARCHS)) $(PKGSRCDIR)/b2
+jams : dirs tarball bootstrap $(addprefix Jam_$(SDK)_, $(ARCHS)) $(PKGSRCDIR)/b2
 
 #
 # bjam source code is not c99 compatible, setting iOS9.3
@@ -200,9 +240,9 @@ $(PKGSRCDIR)/b2 : $(PKGSRCDIR)/bootstrap.sh
 	unset IPHONEOS_DEPLOYMENT_TARGET ;\
 	unset SDKROOT ;\
 	export PATH=usr/local/bin:/usr/bin:/bin ; \
-	cd $(PKGSRCDIR) && CXXFLAGS="$(WFLAGS)" ./bootstrap.sh --with-libraries=$(subst $(space),$(comma),$(BOOST_LIBS))
+	cd $(PKGSRCDIR) && CXXFLAGS="$(WFLAGS)" ./bootstrap.sh --with-toolset=clang --with-libraries=$(subst $(space),$(comma),$(BOOST_LIBS))
 
-builds : dirs tarball bootstrap jams $(addprefix Build_, $(ARCHS))
+builds : dirs tarball bootstrap jams $(addprefix Build_$(SDK)_, $(ARCHS))
 
 #
 # $1 - sdk (iphoneos or iphonesimulator)
@@ -211,29 +251,29 @@ builds : dirs tarball bootstrap jams $(addprefix Build_, $(ARCHS))
 #
 define configure_template
 
-Jam_$(2) : $(MAKER_BUILD_DIR)/$(2) $(MAKER_BUILD_DIR)/$(2)/user-config.jam
+Jam_$(1)_$(2) : $(MAKER_BUILD_DIR)/$(1)/$(2) $(MAKER_BUILD_DIR)/$(1)/$(2)/user-config.jam
 
-$(MAKER_BUILD_DIR)/$(2) :
-	mkdir -p $$@
+$(MAKER_BUILD_DIR)/$(1)/$(2) :
+	$(at)mkdir -p $$@
 
-$(MAKER_BUILD_DIR)/$(2)/user-config.jam :
-	echo using clang-darwin : $(3) > $$@
-	echo "    : xcrun --sdk $(1) clang++" >> $$@
-	echo "    : <cxxflags>\"-miphoneos-version-min=$$(MIN_IOS_VER) $$(XCODE_BITCODE_FLAG) -arch $(2) $$(EXTRA_CPPFLAGS) $$(JAM_DEFINES) $$(WFLAGS)\"" >> $$@
-	echo "      <linkflags>\"-arch $(2)\"" >> $$@
-	echo "      <striper>" >> $$@
-	echo "    ;" >> $$@
+$(MAKER_BUILD_DIR)/$(1)/$(2)/user-config.jam :
+	@echo using clang-darwin : $(3) > $$@
+	@echo "    : xcrun --sdk $(1) clang++" >> $$@
+	@echo "    : <cxxflags>\"-m$(1)-version-min=$$(MIN_IOS_VER) $$(XCODE_BITCODE_FLAG) -arch $(2) $$(EXTRA_CPPFLAGS) $$(JAM_DEFINES) $$(WFLAGS)\"" >> $$@
+	@echo "      <linkflags>\"-arch $(2)\"" >> $$@
+	@echo "      <striper>" >> $$@
+	@echo "    ;" >> $$@
 
-Build_$(2) : $(MAKER_BUILDROOT_DIR)/$(2)/$(FRAMEWORKBUNDLE)$(INSTALLED_LIB)
+Build_$(1)_$(2) : $(MAKER_BUILDROOT_DIR)/$(1)/$(2)/$(FRAMEWORKBUNDLE)$(INSTALLED_LIB)
 
-$(MAKER_BUILDROOT_DIR)/$(2)/$(FRAMEWORKBUNDLE)$(INSTALLED_LIB) :
-	builddir="$(MAKER_BUILDROOT_DIR)/$(2)" ; \
-	installdir="$(MAKER_BUILDROOT_DIR)/$(2)/$(FRAMEWORKBUNDLE)" ; \
+$(MAKER_BUILDROOT_DIR)/$(1)/$(2)/$(FRAMEWORKBUNDLE)$(INSTALLED_LIB) :
+	$(at)builddir="$(MAKER_BUILDROOT_DIR)/$(1)/$(2)" ; \
+	installdir="$(MAKER_BUILDROOT_DIR)/$(1)/$(2)/$(FRAMEWORKBUNDLE)" ; \
 	cd $(PKGSRCDIR) && \
 	PATH=usr/local/bin:/usr/bin:/bin ; \
-	BOOST_BUILD_USER_CONFIG=$(MAKER_BUILD_DIR)/$(2)/user-config.jam \
+	BOOST_BUILD_USER_CONFIG=$(MAKER_BUILD_DIR)/$(1)/$(2)/user-config.jam \
 	./b2 --build-dir="$$$$builddir" --prefix="$$$$installdir" $$(JAM_OPTIONS) toolset=clang-darwin-$(3) target-os=iphone warnings=off link=static $$(JAM_PROPERTIES) install && \
-	cd $$$$installdir/lib && printf "[$(2)] extracting... " && \
+	cd $$$$installdir/lib && printf "[$(1)-$(2)] extracting... " && \
 	for ar in `find . -name "*.a"` ; do \
 	    boostlib=`basename $$$$ar` ; \
 	    if [ $$$$boostlib != libboost.a ] ; then \
@@ -259,57 +299,86 @@ $(MAKER_BUILDROOT_DIR)/$(2)/$(FRAMEWORKBUNDLE)$(INSTALLED_LIB) :
 
 endef
 
-$(eval $(call configure_template,iphoneos,$(ARM_64_ARCH),arm64))
-$(eval $(call configure_template,iphonesimulator,$(X86_64_ARCH),x86_64))
+$(eval $(call configure_template,$(IPHONEOS_SDK),$(ARM_64_ARCH),arm64))
+$(eval $(call configure_template,$(IPHONESIMULATOR_SDK),$(ARM_64_ARCH),arm64))
+$(eval $(call configure_template,$(IPHONESIMULATOR_SDK),$(X86_64_ARCH),x86_64))
 
 FIRST_ARCH = $(firstword $(ARCHS))
 
 .PHONY : bundle-dirs bundle-headers bundle-rm-fat-library bundle-info
 
+SDK_FRAMEWORK_DIR = $(MAKER_INTERMEDIATE_DIR)/$(SDK)/$(FRAMEWORKBUNDLE)
+
 bundle : \
 	bundle-dirs \
 	bundle-headers \
 	bundle-rm-fat-library \
-	$(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/$(FRAMEWORK_NAME) \
-	bundle-info \
-	$(FRAMEWORKBUNDLE).tar.bz2
+	$(SDK_FRAMEWORK_DIR)/$(FRAMEWORK_NAME) \
+	bundle-info
 
 FRAMEWORK_DIRS = \
-	$(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE) \
-	$(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Resources \
-	$(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Headers \
-	$(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Documentation \
-	$(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Modules
+	$(SDK_FRAMEWORK_DIR) \
+	$(SDK_FRAMEWORK_DIR)/Resources \
+	$(SDK_FRAMEWORK_DIR)/Headers \
+	$(SDK_FRAMEWORK_DIR)/Documentation \
+	$(SDK_FRAMEWORK_DIR)/Modules
 
 bundle-dirs : $(FRAMEWORK_DIRS)
 
 $(FRAMEWORK_DIRS) :
-	mkdir -p $@
+	@mkdir -p $@
 
 bundle-headers : bundle-dirs
-	rsync -r -u $(MAKER_BUILDROOT_DIR)/$(FIRST_ARCH)/$(FRAMEWORKBUNDLE)$(INSTALLED_HEADER_DIR)/* $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Headers
+	$(at)rsync -r -u $(MAKER_BUILDROOT_DIR)/$(SDK)/$(FIRST_ARCH)/$(FRAMEWORKBUNDLE)$(INSTALLED_HEADER_DIR)/* $(SDK_FRAMEWORK_DIR)/Headers
 
-$(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Info.plist :
-	cp $(FRAMEWORK_NAME)/Info.plist $@
-	/usr/libexec/plistbuddy -c "Set:CFBundleDevelopmentRegion English" $@
-	/usr/libexec/plistbuddy -c "Set:CFBundleExecutable $(NAME)" $@
-	/usr/libexec/plistbuddy -c "Set:CFBundleName $(FRAMEWORK_NAME)" $@
-	/usr/libexec/plistbuddy -c "Set:CFBundleIdentifier com.cogosense.$(NAME)" $@
+$(SDK_FRAMEWORK_DIR)/Info.plist :
+	$(at)cp $(FRAMEWORK_NAME)/Info.plist $@
+	$(at)/usr/libexec/plistbuddy -c "Set:CFBundleDevelopmentRegion English" $@
+	$(at)/usr/libexec/plistbuddy -c "Set:CFBundleExecutable $(NAME)" $@
+	$(at)/usr/libexec/plistbuddy -c "Set:CFBundleName $(FRAMEWORK_NAME)" $@
+	$(at)/usr/libexec/plistbuddy -c "Set:CFBundleIdentifier com.cogosense.$(NAME)" $@
 
-bundle-info : $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Info.plist
-	verCode=$$(git tag -l '[0-9]*\.[0-9]*\.[0-9]' | wc -l) ; \
+bundle-info : $(SDK_FRAMEWORK_DIR)/Info.plist
+	$(at)verCode=$$(git tag -l '[0-9]*\.[0-9]*\.[0-9]' | wc -l) ; \
 	verStr=$$(git describe --match '[0-9]*\.[0-9]*\.[0-9]' --always) ; \
 	/usr/libexec/plistbuddy -c "Set:CFBundleShortVersionString $${verStr}" $< ; \
 	/usr/libexec/plistbuddy -c "Set:CFBundleVersion $${verCode}" $<
-	plutil -convert binary1 $<
+	$(at)plutil -convert binary1 $<
 
 bundle-rm-fat-library :
-	$(RM) $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/$(FRAMEWORK_NAME)
+	$(at)$(RM) $(SDK_FRAMEWORK_DIR)/$(FRAMEWORK_NAME)
 
-$(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/$(FRAMEWORK_NAME) : $(addprefix $(MAKER_BUILDROOT_DIR)/, $(addsuffix /$(FRAMEWORKBUNDLE)$(INSTALLED_LIB),$(ARCHS)))
-	xcrun -sdk iphoneos lipo -create $^ -o $@
+$(SDK_FRAMEWORK_DIR)/$(FRAMEWORK_NAME) : $(addprefix $(MAKER_BUILDROOT_DIR)/$(SDK)/, $(addsuffix /$(FRAMEWORKBUNDLE)$(INSTALLED_LIB),$(ARCHS)))
+	$(at)mkdir -p $(@D)
+	$(at)xcrun -sdk $(SDK) lipo -create $^ -o $@
 
-$(FRAMEWORKBUNDLE).tar.bz2 :
-	$(RM) $(FRAMEWORKBUNDLE).tar.bz2
-	tar -C $(BUILT_PRODUCTS_DIR) -cjf $(FRAMEWORKBUNDLE).tar.bz2 $(FRAMEWORKBUNDLE)
+.PHONY : xcframework
+xcframework : $(BUILT_PRODUCTS_DIR)/$(XCFRAMEWORKBUNDLE) $(XCFRAMEWORKBUNDLE).tar.bz2 $(XCFRAMEWORKBUNDLE).zip
 
+$(BUILT_PRODUCTS_DIR)/$(XCFRAMEWORKBUNDLE) : $(wildcard $(MAKER_INTERMEDIATE_DIR)/*/$(FRAMEWORKBUNDLE))
+	$(at)xcodebuild -create-xcframework -output $@ $(addprefix -framework , $^)
+
+$(XCFRAMEWORKBUNDLE).tar.bz2 : $(BUILT_PRODUCTS_DIR)/$(XCFRAMEWORKBUNDLE)
+	@echo "creating $@"
+	$(at)tar -C $(BUILT_PRODUCTS_DIR) -cjf $(XCFRAMEWORKBUNDLE).tar.bz2 $(XCFRAMEWORKBUNDLE)
+	@echo "$(XCFRAMEWORKBUNDLE) saved to archive $@"
+
+$(XCFRAMEWORKBUNDLE).zip : $(BUILT_PRODUCTS_DIR)/$(XCFRAMEWORKBUNDLE)
+	@echo "creating $@"
+	$(at)(cd $(BUILT_PRODUCTS_DIR) && zip -qr ../$(XCFRAMEWORKBUNDLE).zip $(XCFRAMEWORKBUNDLE)) || exit $?
+	@echo "$(XCFRAMEWORKBUNDLE) saved to archive $@"
+
+.PHONY : release update-spm
+
+release : $(XCFRAMEWORKBUNDLE).zip update-spm
+	[ $(GITBRANCH) == 'master' ] || exit 0
+	git commit -m "Update SPM to version $(VERSION)" Package.swift ; \
+	git tag -am "Release Boost for iOS v$(VERSION)" $(VERSION) ; \
+	git push --follow-tags ; \
+	gh release create "$(VERSION)" --generate-notes $(XCFRAMEWORKBUNDLE).zip
+
+update-spm :  $(XCFRAMEWORKBUNDLE).zip
+	CHKSUM=$$(swift package compute-checksum $<) ; \
+	sed -E -i '' '/let moduleName =/s/= ".+"/= "$(NAME)"/' Package.swift ; \
+	sed -E -i '' '/let version =/s/= ".+"/= "$(VERSION)"/' Package.swift ; \
+	sed -E -i '' "/let checksum =/s/= \".+\"/= \"$$CHKSUM\"/" Package.swift

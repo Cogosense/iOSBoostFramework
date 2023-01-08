@@ -5,6 +5,6 @@
 /build/
 **/xcuserdata
 /DerivedData/
-/boost.framework.tar.bz2
-/boost.framework.zip
+/boost.xcframework.tar.bz2
+/boost.xcframework.zip
 /Carthage

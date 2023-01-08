@@ -48,33 +48,26 @@ node('osx && ios') {
             Utils.&sendOnHookEmail(contributors)
         }
 
-        stage ('Build Parallel') {
-            stash name: 'Makefile', includes: 'Makefile,boost/**,patches/**'
-            node('osx && ios') {
-                // Accept the license on first install and updates
-                Utils.&acceptXcodeLicense()
-                // clean workspace
-                deleteDir()
-                unstash 'Makefile'
-                sh 'make clean'
-                sh 'make ENABLE_BITCODE=YES BITCODE_GENERATION_MODE=bitcode ARCHS=arm64'
-                stash name: 'arm64', includes: '**/arm64/boost.framework/**'
-            }
+        stage ('Build') {
+            // Accept the license on first install and updates
+            Utils.&acceptXcodeLicense()
+            sh 'make ENABLE_BITCODE=YES BITCODE_GENERATION_MODE=bitcode SDK=iphoneos'
+            sh 'make ENABLE_BITCODE=YES BITCODE_GENERATION_MODE=bitcode SDK=iphonesimulator'
         }
 
         stage ('Assemble Framework') {
-            unstash 'arm64'
-            // Accept the license on first install and updates
-            Utils.&acceptXcodeLicense()
-            sh 'make ARCHS="arm64" bundle'
+            sh 'make xcframework'
         }
 
         stage ('Archive Artifacts') {
             // Archive the SCM logs, the framework directory
             step([$class: 'ArtifactArchiver',
-                artifacts: 'SCM/**, boost.framework.tar.bz2',
+                artifacts: 'SCM/**, boost.framework.tar.bz2, boost.framework.zip',
                 fingerprint: true,
                 onlyIfSuccessful: true])
+            // Release to GitHub if on main branch
+            Utils.brewUpstall('gh')
+            sh 'make release'
         }
 
     }
