@@ -71,7 +71,7 @@ node('osx && ios') {
                 withEnv(['PATH=./utils:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin']) {
                 Utils.upgradeBrew()
                     Utils.brewUpstall('gh')
-                    sh 'make release'
+                    sh "make GITBRANCH=${env.BRANCH_NAME} release"
                 }
             }
         }

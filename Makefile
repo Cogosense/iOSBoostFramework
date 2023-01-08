@@ -40,7 +40,7 @@ BOOST_VERSION = 1_81_0
 #
 # Release version on GitHub - bump last digit to make new
 # GitHub release with same Boost version.
-VERSION =  1.81.0
+VERSION =  1.81.1
 
 #
 # Download location URL
@@ -396,15 +396,20 @@ $(XCFRAMEWORKBUNDLE).zip : $(BUILT_PRODUCTS_DIR)/$(XCFRAMEWORKBUNDLE)
 .PHONY : release update-spm
 
 release : $(XCFRAMEWORKBUNDLE).zip update-spm
-	[ $(GITBRANCH) == 'master' ] && { \
-		git commit -m "Update SPM to version $(VERSION)" Package.swift ; \
-		git tag -am "Release Boost for iOS v$(VERSION)" $(VERSION) ; \
-		git push origin HEAD:master --follow-tags ; \
-		gh release create "$(VERSION)" --generate-notes $(XCFRAMEWORKBUNDLE).zip ; \
-	} || :
+	$(at)if [ $(GITBRANCH) == 'master' ] ; then \
+		if ! gh release view 1.81.1  > /dev/null 2>&1 ; then \
+			echo "creating release $(VERSION)"
+			git commit -m "Update SPM to version $(VERSION)" Package.swift ; \
+			git tag -am "Release Boost for iOS $(VERSION)" $(VERSION) ; \
+			git push origin HEAD:master --follow-tags ; \
+			gh release create "$(VERSION)" --verify-tag --generate-notes $(XCFRAMEWORKBUNDLE).zip ; \
+		else \
+			echo "warning: iOSBoostFramework $(VERSION) has already been created: skipping release" ; \
+		fi ; \
+	fi
 
 update-spm :  $(XCFRAMEWORKBUNDLE).zip
-	CHKSUM=$$(swift package compute-checksum $<) ; \
+	$(at)CHKSUM=$$(swift package compute-checksum $<) ; \
 	sed -E -i '' '/let moduleName =/s/= ".+"/= "$(NAME)"/' Package.swift ; \
 	sed -E -i '' '/let version =/s/= ".+"/= "$(VERSION)"/' Package.swift ; \
 	sed -E -i '' "/let checksum =/s/= \".+\"/= \"$$CHKSUM\"/" Package.swift

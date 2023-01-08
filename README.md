@@ -1,4 +1,5 @@
-# A Boost library framework for iOS [![Carthage compatible](https://img.shields.io/badge/Carthage-compatible-4BC51D.svg?style=flat)](https://github.com/Carthage/Carthage)
+# A Boost library framework for iOS
+[![Carthage compatible](https://img.shields.io/badge/Carthage-compatible-4BC51D.svg?style=flat)](https://github.com/Carthage/Carthage)
 [![SPM compatible](https://img.shields.io/badge/platform-iphoneos%20iphonesimulator%20macosx-blue)](https://developer.apple.com/documentation/xcode/adding-package-dependencies-to-your-app)
 
 More information on the [Boost home page](http://www.boost.org/)
@@ -25,9 +26,11 @@ supports the following platforms:
 * iphoneos arm64
 * iphonesimulator x86_64
 * iphonesimulator arm64
+* macosx x86_64
+* macosx arm64
 
 It is suitable for using on all iOS devices and simulators that support
-iOS 11 and greater.
+iOS 11 and greater. The macosx platform supprts v10 and greater.
 
 ## Xcode Support
 
