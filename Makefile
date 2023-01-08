@@ -331,14 +331,16 @@ FIRST_ARCH = $(firstword $(ARCHS))
 
 .PHONY : bundle-dirs bundle-headers bundle-rm-fat-library bundle-info
 
-SDK_FRAMEWORK_DIR = $(MAKER_INTERMEDIATE_DIR)/$(SDK)/$(FRAMEWORKBUNDLE)
+SDK_DIR = $(MAKER_INTERMEDIATE_DIR)/$(SDK)
+SDK_FRAMEWORK_DIR = $(SDK_DIR)/$(FRAMEWORKBUNDLE)
 
 bundle : \
 	bundle-dirs \
 	bundle-headers \
 	bundle-rm-fat-library \
 	$(SDK_FRAMEWORK_DIR)/$(FRAMEWORK_NAME) \
-	bundle-info
+	bundle-info \
+	$(SDK_DIR)/$(FRAMEWORKBUNDLE).zip
 
 FRAMEWORK_DIRS = \
 	$(SDK_FRAMEWORK_DIR) \
@@ -376,6 +378,11 @@ $(SDK_FRAMEWORK_DIR)/$(FRAMEWORK_NAME) : $(addprefix $(MAKER_BUILDROOT_DIR)/$(SD
 	$(at)mkdir -p $(@D)
 	$(at)xcrun -sdk $(SDK) lipo -create $^ -o $@
 
+$(SDK_DIR)/$(FRAMEWORKBUNDLE).zip : $(SDK_DIR)/$(FRAMEWORKBUNDLE)
+	@echo "creating $@"
+	$(at)(cd $(SDK_DIR) && zip -qr $(FRAMEWORKBUNDLE).zip $(FRAMEWORKBUNDLE)) || exit $?
+	@echo "$(FRAMEWORKBUNDLE) for $(SDK) saved to archive $@"
+
 .PHONY : xcframework
 xcframework : $(BUILT_PRODUCTS_DIR)/$(XCFRAMEWORKBUNDLE) $(XCFRAMEWORKBUNDLE).tar.bz2 $(XCFRAMEWORKBUNDLE).zip
 
@@ -402,7 +409,7 @@ release : $(XCFRAMEWORKBUNDLE).zip update-spm
 			git commit -m "Update SPM to version $(VERSION)" Package.swift ; \
 			git tag -am "Release Boost for iOS $(VERSION)" $(VERSION) ; \
 			git push origin HEAD:master --follow-tags ; \
-			gh release create "$(VERSION)" --verify-tag --generate-notes $(XCFRAMEWORKBUNDLE).zip ; \
+			gh release create "$(VERSION)" --verify-tag --generate-notes $(XCFRAMEWORKBUNDLE).zip  $(MAKER_INTERMEDIATE_DIR)/$(IPHONEOS_SDK)/$(FRAMEWORKBUNDLE).zip; \
 		else \
 			echo "warning: iOSBoostFramework $(VERSION) has already been created: skipping release" ; \
 		fi ; \
