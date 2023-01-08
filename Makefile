@@ -234,7 +234,7 @@ tarball : dirs $(MAKER_ARCHIVES_DIR)/$(TARBALL)
 
 $(MAKER_ARCHIVES_DIR)/$(TARBALL) :
 	@echo "downloading $(DOWNLOAD_URL)"
-	$(at)curl -L --retry 10 -s -o $@ $(DOWNLOAD_URL) || { \
+	$(at)curl -L --retry 10 --retry-delay 12 -s -o $@ $(DOWNLOAD_URL) || { \
 	    $(RM) $@ ; \
 	    exit 1 ; \
 	}
@@ -398,7 +398,7 @@ $(XCFRAMEWORKBUNDLE).zip : $(BUILT_PRODUCTS_DIR)/$(XCFRAMEWORKBUNDLE)
 release : $(XCFRAMEWORKBUNDLE).zip update-spm
 	$(at)if [ $(GITBRANCH) == 'master' ] ; then \
 		if ! gh release view 1.81.1  > /dev/null 2>&1 ; then \
-			echo "creating release $(VERSION)"
+			echo "creating release $(VERSION)" ; \
 			git commit -m "Update SPM to version $(VERSION)" Package.swift ; \
 			git tag -am "Release Boost for iOS $(VERSION)" $(VERSION) ; \
 			git push origin HEAD:master --follow-tags ; \
