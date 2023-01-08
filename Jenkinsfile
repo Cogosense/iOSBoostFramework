@@ -66,7 +66,7 @@ node('osx && ios') {
                 fingerprint: true,
                 onlyIfSuccessful: true])
             // Release to GitHub if on main branch
-            withCredentials([string(credentialsId: '3ad153e6-ab28-48a1-80cf-845c30b29e94', variable: 'GITHUB_ACCESS_TOKEN')]) {
+            withCredentials([string(credentialsId: '3ad153e6-ab28-48a1-80cf-845c30b29e94', variable: 'GH_TOKEN')]) {
                 withEnv(['PATH=./utils:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin']) {
                 Utils.upgradeBrew()
                     Utils.brewUpstall('gh')

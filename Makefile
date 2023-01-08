@@ -359,6 +359,7 @@ $(SDK_FRAMEWORK_DIR)/$(FRAMEWORK_NAME) : $(addprefix $(MAKER_BUILDROOT_DIR)/$(SD
 xcframework : $(BUILT_PRODUCTS_DIR)/$(XCFRAMEWORKBUNDLE) $(XCFRAMEWORKBUNDLE).tar.bz2 $(XCFRAMEWORKBUNDLE).zip
 
 $(BUILT_PRODUCTS_DIR)/$(XCFRAMEWORKBUNDLE) : $(wildcard $(MAKER_INTERMEDIATE_DIR)/*/$(FRAMEWORKBUNDLE))
+	$(at)$(RM) -r $@
 	$(at)xcodebuild -create-xcframework -output $@ $(addprefix -framework , $^)
 
 $(XCFRAMEWORKBUNDLE).tar.bz2 : $(BUILT_PRODUCTS_DIR)/$(XCFRAMEWORKBUNDLE)
@@ -377,7 +378,7 @@ release : $(XCFRAMEWORKBUNDLE).zip update-spm
 	[ $(GITBRANCH) == 'master' ] && { \
 		git commit -m "Update SPM to version $(VERSION)" Package.swift ; \
 		git tag -am "Release Boost for iOS v$(VERSION)" $(VERSION) ; \
-		git push HEAD:master --follow-tags ; \
+		git push origin HEAD:master --follow-tags ; \
 		gh release create "$(VERSION)" --generate-notes $(XCFRAMEWORKBUNDLE).zip ; \
 	} || :
 
