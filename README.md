@@ -15,8 +15,10 @@ The frameworks are distributed using the following methods:
 SPM is now the preferred method. Other methods will be deprecated in the next
 major release.
 
-To add the swift package use the package URL
-https://github.com/Cogosense/iOSBoostFramework and set the version to >= 1.80.0
+To add the swift package right click your project in the Xcode project explorer,
+select __Add packages...__.
+* In the search field enter the package URL __https://github.com/Cogosense/iOSBoostFramework__
+* In the __Dependency Rule__ field set the version to __1.81.0__
 
 ## Platform Support
 
@@ -37,8 +39,11 @@ iOS 11 and greater. The macosx platform supprts v10 and greater.
 Xcode14 has removed support for 32bit compilation, so the armv7 device and
 i386 simulator architecture have been removed.
 
-Note: The latest release 1.81.0 is the first release to support MacOS
-Apple Silicon development simulators.
+Note: The latest release of iOSBoostFramework (1.81.0) is the first release
+to support:
+* MacOS
+* M1 and M2 Apple Silicon processors.
+* iOS Simulator on M! and M2 CPUs.
 
 ## Supported Libraries
 
@@ -70,7 +75,7 @@ a bitcode-marker. Bitcode generation is controlled by the build variable
 
 ## SDK
 
-The iphoneos and iphonesimulator SDKs are currently supported. Using the
+The macosx, iphoneos and iphonesimulator SDKs are currently supported. Using the
 XCFramework, a single binary can be created that supports ARM devices and
 ARM and x86_64 simulators in a single framework bundle.
 
@@ -81,6 +86,7 @@ To build a device framework only:
 
 To build a universal XCframework:
 
+    make SDK=macosx
     make SDK=iphoneos
     make SDK=iphonesimulator
     make xcframework
@@ -93,10 +99,8 @@ is built. This is specified by Xcode using the **ARCHS** build variable.
 ## Support for Swift Package Manager
 
 The new XCframework is distributed as a binary framework. Use the Xcode
-packages to include it into a project.
+packages feature to include it into a project.
 See [Addingpackage dependencies to your app](https://developer.apple.com/documentation/xcode/adding-package-dependencies-to-your-app)
-
-
 
 ## Support for Xcode Workspaces
 
@@ -105,14 +109,14 @@ workspace.
 
 ## Carthage
 
-The Makefile was refactored to work better with the new Xcode10 build system. The **iOSBoostFramework.xcodeproj**
+The Makefile was refactored to work better with the new Xcode10+ build system. The **iOSBoostFramework.xcodeproj**
 file was updated to include a shared Cocoa Touch Framework target **boost**. This is required
 by [Carthage](https://github.com/Carthage/Carthage).
 
 To add **iOSBoostFramework** to your project, first create a *Cartfile* in your project's root
 with the following contents:
 
-    github "Cogosense/iOSBoostFramework" >= 1.68.0
+    github "Cogosense/iOSBoostFramework" >= 1.81.2
 
 Then build with Carthage:
 

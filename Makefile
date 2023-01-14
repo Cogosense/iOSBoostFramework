@@ -40,7 +40,7 @@ BOOST_VERSION = 1_81_0
 #
 # Release version on GitHub - bump last digit to make new
 # GitHub release with same Boost version.
-VERSION =  1.81.1
+VERSION =  1.81.2
 
 #
 # Download location URL
