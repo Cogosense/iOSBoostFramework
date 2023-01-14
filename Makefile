@@ -404,7 +404,7 @@ $(XCFRAMEWORKBUNDLE).zip : $(BUILT_PRODUCTS_DIR)/$(XCFRAMEWORKBUNDLE)
 
 release : $(XCFRAMEWORKBUNDLE).zip update-spm
 	$(at)if [ $(GITBRANCH) == 'master' ] ; then \
-		if ! gh release view 1.81.1  > /dev/null 2>&1 ; then \
+		if ! gh release view $(VERSION)  > /dev/null 2>&1 ; then \
 			echo "creating release $(VERSION)" ; \
 			git commit -m "Update SPM to version $(VERSION)" Package.swift ; \
 			git tag -am "Release Boost for iOS $(VERSION)" $(VERSION) ; \
