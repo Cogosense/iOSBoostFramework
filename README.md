@@ -107,9 +107,8 @@ is built. This is specified by Xcode using the **ARCHS** build variable.
 
 ## Support for Swift Package Manager
 
-The new XCframework is distributed as a binary framework. Use the Xcode
-packages feature to include it into a project.
-See [Addingpackage dependencies to your app](https://developer.apple.com/documentation/xcode/adding-package-dependencies-to-your-app)
+The new XCframework is distributed as a binary framework.
+See [iOSBoost Framework Swift Package Distribution](https://github.com/Cogosense/iOSBoostBinaryPackage.git)
 
 ## Support for Xcode Workspaces
 
