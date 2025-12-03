@@ -18,7 +18,7 @@ major release.
 To add the swift package right click your project in the Xcode project explorer,
 select __Add packages...__.
 * In the search field enter the package URL __https://github.com/Cogosense/iOSBoostFramework__
-* In the __Dependency Rule__ field set the version to __1.81.0__
+* In the __Dependency Rule__ field set the version to __1.89.0__
 
 ## Platform Support
 
@@ -26,7 +26,7 @@ The Makefile in this project creates a iOS XCframework bundle that
 supports the following platforms:
 
 * iphoneos arm64
-* iphonesimulator x86_64
+* iphonesimulator x86_64 (not supported on SDK v26+)
 * iphonesimulator arm64
 * macosx x86_64
 * macosx arm64
@@ -39,11 +39,15 @@ iOS 11 and greater. The macosx platform supprts v10 and greater.
 Xcode14 has removed support for 32bit compilation, so the armv7 device and
 i386 simulator architecture have been removed.
 
-Note: The latest release of iOSBoostFramework (1.81.0) is the first release
-to support:
-* MacOS
-* M1 and M2 Apple Silicon processors.
-* iOS Simulator on M! and M2 CPUs.
+The first release of iOSBoostFramework to support xcframeworks is 1.81.2.
+
+The following operating systems and processors are supported:
+* MacOSX on Intel and Apple processors.
+* iOS on Apple 64 bit processors
+* iOS Simulator on Intel and Apple processors.
+
+The iOS Simulator for Intel processors is only supported upto Xcode 16.4,
+from Xcode 26.1, there is no platform support for iOS simulators on x86_64.
 
 ## Supported Libraries
 
@@ -62,6 +66,7 @@ The following boost libraries are built
 * exception
 * random
 * locale
+* container
 
 The locale library has the POSIX option turned on and the libiconv library
 supplied with iOS is used.
@@ -91,6 +96,10 @@ To build a universal XCframework:
     make SDK=iphonesimulator
     make xcframework
 
+Or in line line:
+
+    for sdk in macosx iphoneos iphonesimulator ; do make SDK=$sdk ; done && make xcframework
+
 ## Active Architectures
 
 When used in conjunction with an Xcode workspace, only the active architecture
@@ -116,7 +125,7 @@ by [Carthage](https://github.com/Carthage/Carthage).
 To add **iOSBoostFramework** to your project, first create a *Cartfile* in your project's root
 with the following contents:
 
-    github "Cogosense/iOSBoostFramework" >= 1.81.2
+    github "Cogosense/iOSBoostFramework" >= 1.89.0
 
 Then build with Carthage:
 

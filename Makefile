@@ -36,11 +36,11 @@ GITCOMMIT ?= $(shell which git > /dev/null && git rev-parse --verify -q HEAD || 
 #
 # library to be built
 NAME = boost
-BOOST_VERSION = 1_81_0
+BOOST_VERSION = 1_89_0
 #
 # Release version on GitHub - bump last digit to make new
 # GitHub release with same Boost version.
-VERSION =  1.81.2
+VERSION =  1.89.0
 
 #
 # Download location URL
@@ -69,10 +69,22 @@ IPHONEOS_SDK = iphoneos
 IPHONESIMULATOR_SDK = iphonesimulator
 
 #
+# The supported Boost target-os
+#
+MACOSX_TARGET = darwin
+IPHONEOS_TARGET = iphone
+IPHONESIMULATOR_TARGET = iphone
+
+#
 # The supported Xcode build architectures
 #
 ARM_64_ARCH = arm64
 X86_64_ARCH = x86_64
+
+#
+# SDK platform version
+#
+IPHONESIMULATOR_SDK_PLATFORM_VERSION = $(shell xcrun --sdk $(IPHONESIMULATOR_SDK) --show-sdk-platform-version)
 
 #
 # set or unset warning flags
@@ -86,8 +98,10 @@ WFLAGS = -Wall -pedantic -Wno-unused-variable -Wno-deprecated-declarations
 # -fvisibility-inlines-hidden
 # (if -fvisibility=hidden is specified, then -fvisibility-inlines-hidden is unnecessary as inlines are already hidden)
 #
-EXTRA_CPPFLAGS = -DBOOST_AC_USE_PTHREADS -DBOOST_SP_USE_PTHREADS -stdlib=libc++ -std=c++17
-BOOST_LIBS = atomic date_time exception filesystem locale program_options random regex serialization system test thread chrono
+EXTRA_CFLAGS =
+EXTRA_CXXFLAGS = -stdlib=libc++ -std=c++17
+EXTRA_CPPFLAGS =
+BOOST_LIBS = atomic date_time exception filesystem locale program_options random regex serialization system test thread chrono container
 JAM_PROPERTIES = visibility=global
 
 #
@@ -148,7 +162,15 @@ ifeq ($(SDK),$(IPHONEOS_SDK))
 else
 	ifeq ($(SDK),$(IPHONESIMULATOR_SDK))
 		SDK = $(IPHONESIMULATOR_SDK)
-		ARCHS ?= $(ARM_64_ARCH) $(X86_64_ARCH)
+		# MacOSX Tahoe removed support for all but one Intel Mac.
+		# Tahoe shipped with SDK26.1, x86_64 simulator can still be built
+		# but is no longer supported (discouraged) by Apple. Older SDK's
+		# will still build it.
+		ifeq ($(shell expr $(IPHONESIMULATOR_SDK_PLATFORM_VERSION) \>= 26),1)
+			ARCHS ?= $(ARM_64_ARCH)
+		else
+			ARCHS ?= $(ARM_64_ARCH) $(X86_64_ARCH)
+		endif
 	else
 		ifeq ($(SDK),$(MACOSX_SDK))
 			SDK = $(MACOSX_SDK)
@@ -269,7 +291,8 @@ builds : dirs tarball bootstrap jams $(addprefix Build_$(SDK)_, $(ARCHS))
 #
 # $1 - sdk (iphoneos or iphonesimulator)
 # $2 - xcode architecture (arm64, x86_64)
-# $3 - boost toolchain architecture (arm64, x86_64)
+# $3 - boost target (darwin, iphone)
+# $4 - boost toolchain architecture (arm64, x86_64)
 #
 define configure_template
 
@@ -279,10 +302,11 @@ $(MAKER_BUILD_DIR)/$(1)/$(2) :
 	$(at)mkdir -p $$@
 
 $(MAKER_BUILD_DIR)/$(1)/$(2)/user-config.jam :
-	@echo using clang-darwin : $(3) > $$@
+	@echo using clang-darwin : $(4) > $$@
 	@echo "    : xcrun --sdk $(1) clang++" >> $$@
-	@echo "    : <cxxflags>\"-m$(1)-version-min=$$(MIN_OS_VER) $$(XCODE_BITCODE_FLAG) -arch $(2) $$(EXTRA_CPPFLAGS) $$(JAM_DEFINES) $$(WFLAGS)\"" >> $$@
-	@echo "      <linkflags>\"-arch $(2)\"" >> $$@
+	@echo "    : <cxxflags>\"-m$(1)-version-min=$$(MIN_OS_VER) $$(XCODE_BITCODE_FLAG) -arch $(2) $$(EXTRA_CXXFLAGS) $$(EXTRA_CPPFLAGS) $$(JAM_DEFINES) $$(WFLAGS)\"" >> $$@
+	@echo "      <cflags>\"-m$(1)-version-min=$$(MIN_OS_VER) $$(XCODE_BITCODE_FLAG) -arch $(2) $$(EXTRA_CFLAGS) $$(EXTRA_CPPFLAGS) $$(JAM_DEFINES) $$(WFLAGS)\"" >> $$@
+	@echo "      <linkflags>\"-arch $(2) -liconv\"" >> $$@
 	@echo "      <striper>" >> $$@
 	@echo "    ;" >> $$@
 
@@ -292,27 +316,27 @@ $(MAKER_BUILDROOT_DIR)/$(1)/$(2)/$(FRAMEWORKBUNDLE)$(INSTALLED_LIB) :
 	$(at)builddir="$(MAKER_BUILDROOT_DIR)/$(1)/$(2)" ; \
 	installdir="$(MAKER_BUILDROOT_DIR)/$(1)/$(2)/$(FRAMEWORKBUNDLE)" ; \
 	cd $(PKGSRCDIR) && \
-	PATH=usr/local/bin:/usr/bin:/bin ; \
+	PATH=usr/local/bin:/usr/bin:/bin \
 	BOOST_BUILD_USER_CONFIG=$(MAKER_BUILD_DIR)/$(1)/$(2)/user-config.jam \
-	./b2 --build-dir="$$$$builddir" --prefix="$$$$installdir" $$(JAM_OPTIONS) toolset=clang-darwin-$(3) target-os=iphone warnings=off link=static $$(JAM_PROPERTIES) install && \
+	./b2 --build-dir="$$$$builddir" --prefix="$$$$installdir" $$(JAM_OPTIONS) toolset=clang-darwin-$(4) target-os=$(3) warnings=off link=static $$(JAM_PROPERTIES) install && \
 	cd $$$$installdir/lib && printf "[$(1)-$(2)] extracting... " && \
 	for ar in `find . -name "*.a"` ; do \
-	    boostlib=`basename $$$$ar` ; \
-	    if [ $$$$boostlib != libboost.a ] ; then \
-		libname=`echo $$$$boostlib | sed 's/.*libboost_\([^.]*\).*$$$$/\1/'` ; \
-		mkdir $$$$libname && printf "$$$$libname " ; \
-		(cd $$$$libname && xcrun -sdk $(1) ar -x ../$$$$boostlib) || { \
-		    echo "failed to extract $$(dir $$@)/$$$$boostlib"; \
-		    $(RM) $$@; \
-		    exit 1 ; \
-		} ; \
-		for obj in `find $$$$libname -name '*.o'` ; do \
-		    file=`basename $$$$obj` ; \
-		    mv $$$$obj ./$$$${libname}_$$$${file} ; \
-		done ; \
-		$(RM) -r $$$$libname ; \
-	    fi ; \
-	    $(RM) $$$$ar ; \
+		boostlib=`basename $$$$ar` ; \
+		if [ $$$$boostlib != libboost.a ] ; then \
+			libname=`echo $$$$boostlib | sed 's/.*libboost_\([^.]*\).*$$$$/\1/'` ; \
+			mkdir $$$$libname && printf "$$$$libname " ; \
+			(cd $$$$libname && xcrun -sdk $(1) ar -x ../$$$$boostlib) || { \
+				echo "failed to extract $$(dir $$@)/$$$$boostlib"; \
+				$(RM) $$@; \
+				exit 1 ; \
+			} ; \
+			for obj in `find $$$$libname -name '*.o'` ; do \
+				file=`basename $$$$obj` ; \
+				mv $$$$obj ./$$$${libname}_$$$${file} ; \
+			done ; \
+			$(RM) -r $$$$libname ; \
+		fi ; \
+		$(RM) $$$$ar ; \
 	done ; \
 	printf "\n" ; \
 	xcrun -sdk $(1) ar -cruS libboost.a *.o ; \
@@ -321,11 +345,11 @@ $(MAKER_BUILDROOT_DIR)/$(1)/$(2)/$(FRAMEWORKBUNDLE)$(INSTALLED_LIB) :
 
 endef
 
-$(eval $(call configure_template,$(MACOSX_SDK),$(ARM_64_ARCH),arm64))
-$(eval $(call configure_template,$(MACOSX_SDK),$(X86_64_ARCH),x86_64))
-$(eval $(call configure_template,$(IPHONEOS_SDK),$(ARM_64_ARCH),arm64))
-$(eval $(call configure_template,$(IPHONESIMULATOR_SDK),$(ARM_64_ARCH),arm64))
-$(eval $(call configure_template,$(IPHONESIMULATOR_SDK),$(X86_64_ARCH),x86_64))
+$(eval $(call configure_template,$(MACOSX_SDK),$(ARM_64_ARCH),$(MACOSX_TARGET),arm64))
+$(eval $(call configure_template,$(MACOSX_SDK),$(X86_64_ARCH),$(MACOSX_TARGET),x86_64))
+$(eval $(call configure_template,$(IPHONEOS_SDK),$(ARM_64_ARCH),$(IPHONEOS_TARGET),arm64))
+$(eval $(call configure_template,$(IPHONESIMULATOR_SDK),$(ARM_64_ARCH),$(IPHONESIMULATOR_TARGET),arm64))
+$(eval $(call configure_template,$(IPHONESIMULATOR_SDK),$(X86_64_ARCH),$(IPHONESIMULATOR_TARGET),x86_64))
 
 FIRST_ARCH = $(firstword $(ARCHS))
 

@@ -71,7 +71,9 @@ node('osx && ios') {
                 withEnv(['PATH=./utils:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin']) {
                 Utils.upgradeBrew()
                     Utils.brewUpstall('gh')
-                    sh "make GITBRANCH=${env.BRANCH_NAME} release"
+                    sshagent(['38bf8b09-9e52-421a-a8ed-5280fcb921af']) {
+                        sh "make GITBRANCH=${env.BRANCH_NAME} release"
+                    }
                 }
             }
         }
@@ -97,9 +99,9 @@ def getUtils() {
             submoduleCfg: [],
             userRemoteConfigs: [[url: 'git@github.com:Cogosense/JenkinsUtils.git', credentialsId: '38bf8b09-9e52-421a-a8ed-5280fcb921af']]])
     } catch(err) {
-        // Load the SCM util scripts falling back to the master branch
+        // Load the SCM util scripts falling back to the main branch
         checkout([$class: 'GitSCM',
-            branches: [[name: "*/master"]],
+            branches: [[name: "*/main"]],
             doGenerateSubmoduleConfigurations: false,
             extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'utils']],
             submoduleCfg: [],
