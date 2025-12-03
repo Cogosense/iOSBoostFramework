@@ -4,7 +4,7 @@ import PackageDescription
 
 let version = "1.89.0"
 let moduleName = "boost"
-let checksum = "410c1f3f92d2be59d60765632aee189db4b56cc4fdbd21354fda9f07d86bb120"
+let checksum = "2ea19b24fdba06dbdded0228eeb011d599492b9a3cb1466b63b710fe8c31608e"
 
 let package = Package(
     name: moduleName,
