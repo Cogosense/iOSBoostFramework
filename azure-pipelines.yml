@@ -25,6 +25,7 @@ jobs:
           make GITBRANCH=$(Build.SourceBranchName) release
           version=$(make version)
           echo "##vso[task.setvariable variable=boostVersion;isOutput=true]$version"
+        name: build
       - task: CopyFiles@2
         inputs:
           Contents: 'boost.xcframework.zip'
@@ -33,23 +34,49 @@ jobs:
         displayName: 'Cache Boost XCFramework'
         artifact: framework
 
-  - job: Release
+  - job: Publish
     dependsOn: Build
     condition: and(succeeded('Build'),not(canceled()))
+    displayName: Publish SPM metadata Package.swift
+    variables:
+      boostVersion: $[ dependencies.Build.outputs['build.boostVersion'] ]
+    steps:
+      - checkout: Boost-iOS
+        fetchTags: true
+        persistCredentials: true
+      - download: current
+        artifact: framework
+        displayName: 'Get cached Boost XCFramework'
+      - script: |
+          CHKSUM=$(swift package compute-checksum $(Pipeline.Workspace)/framework/boost.xcframework.zip)
+          ls -l /usr/bin/sed
+          which sed
+          echo "boost version: $(boostVersion)"
+          sed -E -i '' '/let moduleName =/s/= ".+"/= "$(moduleName)"/' Package.swift
+          sed -E -i '' '/let version =/s/= ".+"/= "$(boostVersion)"/' Package.swift
+          sed -E -i '' "/let checksum =/s/= \".+\"/= \"$CHKSUM\"/" Package.swift
+          cat Package.swift
+          git config --global user.email "cogojenkins@cogosense.com"
+          git config --global user.name "$(Build.DefinitionName) Azure Pipeline"
+          git tag -l $(boostVersion)
+          if false ; then
+          git commit -m "Update SPM to version $(boostVersion)" Package.swift
+          git tag -am "Release Boost for iOS $(boostVersion)" $(boostVersion)
+          git push origin HEAD:main --follow-tags
+          fi
+
+  - job: Release
+    dependsOn: Publish
+    condition: and(succeeded('Publish'),not(canceled()))
     displayName: Release binary SPM XCFramework
     variables:
-      boostVersion: $[ dependencies.Build.outputs['passOutput.boostVersion'] ]
+      boostVersion: $[ dependencies.Build.outputs['build.boostVersion'] ]
     steps:
       - checkout: Boost-iOS
       - download: current
         artifact: framework
         displayName: 'Get cached Boost XCFramework'
-      - script:
-          CHKSUM=$(swift package compute-checksum $(Pipeline.Workspace)/framework/boost.xcframework.zip) ; \
-          sed -E -i '' '/let moduleName =/s/= ".+"/= "$(moduleName)"/' Package.swift
-          sed -E -i '' '/let version =/s/= ".+"/= "$(boostVersion)"/' Package.swift
-          sed -E -i '' "/let checksum =/s/= \".+\"/= \"$CHKSUM\"/" Package.swift
-          cat Package.swift
-
+      - script: |
+          echo $(boostVersion)
 
 
