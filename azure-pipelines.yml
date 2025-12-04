@@ -1,12 +1,55 @@
 pool:
   vmImage: macOS-15
 
-steps:
-  - checkout: self
-  - script: |
-      for sdk in macosx iphoneos iphonesimulator ; do
-        make SDK=$sdk
-      done
-  - script: make xcframework
-  - script: make release
+variables:
+  moduleName: 'boost'
+
+resources:
+  repositories:
+    - repository: Boost-iOS
+      type: github
+      name: Cogosense/Boost-iOS
+      endpoint: Cogosense
+      ref: main
+
+jobs:
+  job: Build
+    displayName: Build Boost XCFramework
+    steps:
+      - checkout: self
+      - script: |
+          for sdk in macosx iphoneos iphonesimulator ; do
+            make SDK=$sdk
+          done
+          make xcframework
+          make GITBRANCH=$(Build.SourceBranchName) release
+          version=$(make version)
+          echo "##vso[task.setvariable variable=boostVersion;isOutput=true]$version"
+      - task: CopyFiles@2
+        inputs:
+          Contents: 'boost.xcframework.zip'
+          TargetFolder: $(Build.ArtifactStagingDirectory)
+      - publish: $(Build.ArtifactStagingDirectory)
+        displayName: 'Cache Boost XCFramework'
+        artifact: framework
+
+  job: Release
+    dependsOn: Build
+    condition: and(succeeded('Build'),not(canceled()))
+    displayName: Release binary SPM XCFramework
+    variables:
+      boostVersion: $[ dependencies.Build.outputs['passOutput.boostVersion'] ]
+    steps:
+      - checkout: Boost-iOS
+      - download: current
+        artifact: framework
+        displayName: 'Get cached Boost XCFramework'
+      - script:
+          CHKSUM=$(swift package compute-checksum $(Pipeline.Workspace)/framework/boost.xcframework.zip) ; \
+          sed -E -i '' '/let moduleName =/s/= ".+"/= "$(moduleName)"/' Package.swift
+          sed -E -i '' '/let version =/s/= ".+"/= "$(boostVersion)"/' Package.swift
+          sed -E -i '' "/let checksum =/s/= \".+\"/= \"$CHKSUM\"/" Package.swift
+          cat Package.swift
+
+
 

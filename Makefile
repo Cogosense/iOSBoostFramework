@@ -414,6 +414,11 @@ $(BUILT_PRODUCTS_DIR)/$(XCFRAMEWORKBUNDLE) : $(wildcard $(MAKER_INTERMEDIATE_DIR
 	$(at)$(RM) -r $@
 	$(at)xcodebuild -create-xcframework -output $@ $(addprefix -framework , $^)
 
+$(XCFRAMEWORKBUNDLE).tar.gz : $(BUILT_PRODUCTS_DIR)/$(XCFRAMEWORKBUNDLE)
+	@echo "creating $@"
+	$(at)tar -C $(BUILT_PRODUCTS_DIR) -czf $(XCFRAMEWORKBUNDLE).tar.gz $(XCFRAMEWORKBUNDLE)
+	@echo "$(XCFRAMEWORKBUNDLE) saved to archive $@"
+
 $(XCFRAMEWORKBUNDLE).tar.bz2 : $(BUILT_PRODUCTS_DIR)/$(XCFRAMEWORKBUNDLE)
 	@echo "creating $@"
 	$(at)tar -C $(BUILT_PRODUCTS_DIR) -cjf $(XCFRAMEWORKBUNDLE).tar.bz2 $(XCFRAMEWORKBUNDLE)
@@ -426,13 +431,16 @@ $(XCFRAMEWORKBUNDLE).zip : $(BUILT_PRODUCTS_DIR)/$(XCFRAMEWORKBUNDLE)
 
 .PHONY : release update-spm
 
-release : $(XCFRAMEWORKBUNDLE).zip
+version :
+	@echo $(VERSION)
+
+release : $(XCFRAMEWORKBUNDLE).tar.gz $(XCFRAMEWORKBUNDLE).tar.bz2 $(XCFRAMEWORKBUNDLE).zip
 	$(at)if [ $(GITBRANCH) == 'master' ] ; then \
 		if ! gh release view $(VERSION)  > /dev/null 2>&1 ; then \
 			echo "creating release $(VERSION)" ; \
 			git tag -am "Release Boost for iOS $(VERSION)" $(VERSION) ; \
 			git push origin HEAD:master --follow-tags ; \
-			gh release create "$(VERSION)" --verify-tag --generate-notes $(XCFRAMEWORKBUNDLE).zip  $(MAKER_INTERMEDIATE_DIR)/$(IPHONEOS_SDK)/$(FRAMEWORKBUNDLE).zip; \
+			gh release create "$(VERSION)" --verify-tag --generate-notes $(XCFRAMEWORKBUNDLE).tar.gz $(XCFRAMEWORKBUNDLE).tar.bz2 $(XCFRAMEWORKBUNDLE).zip  $(MAKER_INTERMEDIATE_DIR)/$(IPHONEOS_SDK)/$(FRAMEWORKBUNDLE).zip; \
 		else \
 			echo "warning: iOSBoostFramework $(VERSION) has already been created: skipping release" ; \
 		fi ; \
