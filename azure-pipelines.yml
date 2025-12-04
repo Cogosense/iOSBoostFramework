@@ -13,7 +13,7 @@ resources:
       ref: main
 
 jobs:
-  job: Build
+  - job: Build
     displayName: Build Boost XCFramework
     steps:
       - checkout: self
@@ -33,7 +33,7 @@ jobs:
         displayName: 'Cache Boost XCFramework'
         artifact: framework
 
-  job: Release
+  - job: Release
     dependsOn: Build
     condition: and(succeeded('Build'),not(canceled()))
     displayName: Release binary SPM XCFramework
