@@ -1,37 +1,72 @@
 pool:
   vmImage: macOS-15
 
+# Build an XCFramework, and optionally
+# release a binary zip file to a second repository
+# used as the SPM repository.
+#
+# To build this on your own Azure DevOps Organization
+#
+# 1. Set up Azure Devops connection to Github
+# 2. Set the global variables here to match your setup
+# 3. Go add a pipeline in Azure DevOps
+#
+# Note there are two repos involved:
+# 1. Build repo - the repo this pipeline script is located
+# 2. SPM repo - the repo used to ship the binary framework,
+#    that is the one specified in 'moduleRepoName'
+#
+# The githubConnection is the authenticated service connection
+# between Azure and Github
+#
 variables:
   moduleName: 'boost'
+  moduleRepoName: 'Boost-iOS'
+  githubConnection: 'Cogosense'
+  githubOrg: 'Cogosense'
+  gitUserEmail: 'cogojenkins@cogosense.com'
+  gitUserName: "$(Build.DefinitionName) Azure Pipeline"
 
 resources:
   repositories:
-    - repository: Boost-iOS
+    - repository: $(moduleRepoName)
       type: github
-      name: Cogosense/Boost-iOS
-      endpoint: Cogosense
+      name: $(githubOrg)/$(moduleRepoName)
+      endpoint: $(githubConnection)
       ref: main
 
 jobs:
   - job: Build
-    displayName: Build Boost XCFramework
+    displayName: Build XCFramework
     steps:
       - checkout: self
+        persistCredentials: true
       - script: |
+          version=$(make version)
+          echo "##vso[task.setvariable variable=moduleVersion;isOutput=true]$version"
+          echo "1. $(moduleVersion)"
+          echo "2. ${{variables.moduleVersion}}"
+          echo "3. $[variables.moduleVersion]"
+
           for sdk in macosx iphoneos iphonesimulator ; do
             make SDK=$sdk
           done
           make xcframework
-          make GITBRANCH=$(Build.SourceBranchName) release
-          version=$(make version)
-          echo "##vso[task.setvariable variable=boostVersion;isOutput=true]$version"
+          if [ -f notes/RELNOTES-$version ] ; then
+            make GITBRANCH=$(Build.SourceBranchName) release
+          fi
         name: build
+        env:
+          GH_TOKEN: $(System.AccessToken)
       - task: CopyFiles@2
         inputs:
-          Contents: 'boost.xcframework.zip'
+          Contents: |
+            notes/RELNOTES-$[variables.moduleVersion]
+            $(moduleName).xcframework.zip
           TargetFolder: $(Build.ArtifactStagingDirectory)
+          flattenFolders: true
       - publish: $(Build.ArtifactStagingDirectory)
-        displayName: 'Cache Boost XCFramework'
+        displayName: 'Cache XCFramework'
         artifact: framework
 
   - job: Publish
@@ -39,44 +74,64 @@ jobs:
     condition: and(succeeded('Build'),not(canceled()))
     displayName: Publish SPM metadata Package.swift
     variables:
-      boostVersion: $[ dependencies.Build.outputs['build.boostVersion'] ]
+      moduleVersion: $[ dependencies.Build.outputs['build.moduleVersion'] ]
     steps:
-      - checkout: Boost-iOS
+      - checkout: $(moduleRepoName)
         fetchTags: true
         persistCredentials: true
       - download: current
         artifact: framework
-        displayName: 'Get cached Boost XCFramework'
+        displayName: 'Get cached XCFramework'
       - script: |
-          CHKSUM=$(swift package compute-checksum $(Pipeline.Workspace)/framework/boost.xcframework.zip)
-          ls -l /usr/bin/sed
-          which sed
-          echo "boost version: $(boostVersion)"
+          CHKSUM=$(swift package compute-checksum $(Pipeline.Workspace)/framework/$(moduleName).xcframework.zip)
           sed -E -i '' '/let moduleName =/s/= ".+"/= "$(moduleName)"/' Package.swift
-          sed -E -i '' '/let version =/s/= ".+"/= "$(boostVersion)"/' Package.swift
+          sed -E -i '' '/let version =/s/= ".+"/= "$(moduleVersion)"/' Package.swift
           sed -E -i '' "/let checksum =/s/= \".+\"/= \"$CHKSUM\"/" Package.swift
-          cat Package.swift
-          git config --global user.email "cogojenkins@cogosense.com"
-          git config --global user.name "$(Build.DefinitionName) Azure Pipeline"
-          git tag -l $(boostVersion)
-          if false ; then
-          git commit -m "Update SPM to version $(boostVersion)" Package.swift
-          git tag -am "Release Boost for iOS $(boostVersion)" $(boostVersion)
-          git push origin HEAD:main --follow-tags
+          git config --global user.email "$(gitUserEmail)"
+          git config --global user.name "$(gitUserName)"
+          tag=$(git tag -l $(moduleVersion))
+          if [ -z "$tag" -a -f "$(Pipeline.Workspace)/framework/RELNOTES-$(moduleVersion)" ] ; then
+            echo "publishing Package.swift for module ($(moduleRepoName)) version ($(moduleVersion))"
+            git commit -m "Update SPM to version $(moduleVersion)" Package.swift
+            git tag -am "Release $(moduleRepoName) version $(moduleVersion)" $(moduleVersion)
+            git push origin HEAD:main --follow-tags
+            echo "##vso[task.setvariable variable=createRelease;isOutput=true]true"
+          elif [ -n "$tag" ] ; then
+            echo "notice: $(moduleRepoName) $(moduleVersion) has already been released: skipping release job"
+          else
+            echo "warning: $(moduleRepoName) $(moduleVersion) is not ready for release"
+            echo "         To enable automated release:"
+            echo "         - update the VERSION variable in the Makefile"
+            echo "         - add the file \"notes/RELNOTES-<VERSION>\" to the repo"
           fi
+        name: publish
+      - script: |
+          rm -rf $(Pipeline.Workspace)/framework
+        displayName: Cleanup workspace
 
   - job: Release
     dependsOn: Publish
-    condition: and(succeeded('Publish'),not(canceled()))
+    condition: and(and(succeeded('Publish'),not(canceled())),eq(dependencies.Publish.outputs['publish.createRelease'], 'true'))
     displayName: Release binary SPM XCFramework
     variables:
-      boostVersion: $[ dependencies.Build.outputs['build.boostVersion'] ]
+      moduleVersion: $[ dependencies.Build.outputs['build.moduleVersion'] ]
     steps:
-      - checkout: Boost-iOS
+      - checkout: $(moduleRepoName)
       - download: current
         artifact: framework
-        displayName: 'Get cached Boost XCFramework'
+        displayName: 'Get cached XCFramework'
+      - task: GitHubRelease@1
+        inputs:
+          gitHubConnection: $(githubConnection)
+          repositoryName: '$(githubOrg)/$(moduleRepoName)'
+          tagSource: 'userSpecifiedTag'
+          tag: $(moduleVersion)
+          changeLogCompareToRelease: 'lastFullRelease'
+          changeLogType: 'commitBased'
+          releaseNotesSource: 'filePath'
+          releaseNotesFilePath: $(Pipeline.Workspace)/framework/RELNOTES-$(moduleVersion)
+          assets: |
+            $(Pipeline.Workspace)/framework/$(moduleName).xcframework.zip
       - script: |
-          echo $(boostVersion)
-
-
+          rm -rf $(Pipeline.Workspace)/framework
+        displayName: Cleanup workspace

@@ -1,0 +1,20 @@
+Update Boost to v1.89.0
+
+Resolved Issues With Xcode26.1, this framework was built with Xcode16.1.
+
+This supports the following platforms:
+
+* iphoneos/arm64
+* iphonesimulator/arm64
+* iphonesimulator/x86_64
+* macosx/arm64
+* macosx/x86_64
+
+## Fixed issues
+
+* Detection of the platform libiconv to support building the locale library.
+* Added the boost container library.
+
+## Deprecations:
+
+The x86_64 iphonesimulator architecture is not built on MacOSX Tahoe (Xcode26+)

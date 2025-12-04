@@ -434,33 +434,19 @@ $(XCFRAMEWORKBUNDLE).zip : $(BUILT_PRODUCTS_DIR)/$(XCFRAMEWORKBUNDLE)
 version :
 	@echo $(VERSION)
 
-release : $(XCFRAMEWORKBUNDLE).tar.gz $(XCFRAMEWORKBUNDLE).tar.bz2 $(XCFRAMEWORKBUNDLE).zip
+release : notes/RELNOTES-$(VERSION) $(XCFRAMEWORKBUNDLE).tar.gz $(XCFRAMEWORKBUNDLE).tar.bz2 $(XCFRAMEWORKBUNDLE).zip
 	$(at)if [ $(GITBRANCH) == 'master' ] ; then \
 		if ! gh release view $(VERSION)  > /dev/null 2>&1 ; then \
 			echo "creating release $(VERSION)" ; \
 			git tag -am "Release Boost for iOS $(VERSION)" $(VERSION) ; \
 			git push origin HEAD:master --follow-tags ; \
-			gh release create "$(VERSION)" --verify-tag --generate-notes $(XCFRAMEWORKBUNDLE).tar.gz $(XCFRAMEWORKBUNDLE).tar.bz2 $(XCFRAMEWORKBUNDLE).zip  $(MAKER_INTERMEDIATE_DIR)/$(IPHONEOS_SDK)/$(FRAMEWORKBUNDLE).zip; \
+			gh release create "$(VERSION)" \
+				--verify-tag \
+				--generate-notes \
+				-F notes/RELNOTES-$(VERSION) \
+				$(XCFRAMEWORKBUNDLE).tar.gz $(XCFRAMEWORKBUNDLE).tar.bz2 $(XCFRAMEWORKBUNDLE).zip \
+				$(MAKER_INTERMEDIATE_DIR)/$(IPHONEOS_SDK)/$(FRAMEWORKBUNDLE).zip; \
 		else \
 			echo "warning: iOSBoostFramework $(VERSION) has already been created: skipping release" ; \
 		fi ; \
 	fi
-
-spm : $(XCFRAMEWORKBUNDLE).zip update-spm
-	$(at)if [ $(GITBRANCH) == 'master' ] ; then \
-		if ! gh release view $(VERSION)  > /dev/null 2>&1 ; then \
-			echo "creating release $(VERSION)" ; \
-			git commit -m "Update SPM to version $(VERSION)" Package.swift ; \
-			git tag -am "Release Boost for iOS $(VERSION)" $(VERSION) ; \
-			git push origin HEAD:master --follow-tags ; \
-			gh release create "$(VERSION)" --verify-tag --generate-notes $(XCFRAMEWORKBUNDLE).zip  $(MAKER_INTERMEDIATE_DIR)/$(IPHONEOS_SDK)/$(FRAMEWORKBUNDLE).zip; \
-		else \
-			echo "warning: iOSBoostFramework $(VERSION) has already been created: skipping release" ; \
-		fi ; \
-	fi
-
-update-spm :  $(XCFRAMEWORKBUNDLE).zip
-	$(at)CHKSUM=$$(swift package compute-checksum $<) ; \
-	sed -E -i '' '/let moduleName =/s/= ".+"/= "$(NAME)"/' Package.swift ; \
-	sed -E -i '' '/let version =/s/= ".+"/= "$(VERSION)"/' Package.swift ; \
-	sed -E -i '' "/let checksum =/s/= \".+\"/= \"$$CHKSUM\"/" Package.swift
