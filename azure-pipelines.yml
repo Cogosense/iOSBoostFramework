@@ -1,0 +1,12 @@
+pool:
+  vmImage: macOS-15
+
+steps:
+  - checkout: self
+  - script: |
+      for sdk in macosx iphoneos iphonesimulator ; do
+        make SDK=$sdk
+      done
+  - script: make xcframework
+  - script: make release
+
