@@ -29,10 +29,10 @@ variables:
 
 resources:
   repositories:
-    - repository: $(moduleRepoName)
+    - repository: 'packageRepo'
       type: github
-      name: $(githubOrg)/$(moduleRepoName)
-      endpoint: $(githubConnection)
+      name: 'Cogosense/Boost-iOS'
+      endpoint: 'Cogosense'
       ref: main
 
 jobs:
@@ -44,9 +44,6 @@ jobs:
       - script: |
           version=$(make version)
           echo "##vso[task.setvariable variable=moduleVersion;isOutput=true]$version"
-          echo "1. $(moduleVersion)"
-          echo "2. ${{variables.moduleVersion}}"
-          echo "3. $[variables.moduleVersion]"
 
           for sdk in macosx iphoneos iphonesimulator ; do
             make SDK=$sdk
@@ -61,7 +58,7 @@ jobs:
       - task: CopyFiles@2
         inputs:
           Contents: |
-            notes/RELNOTES-$[variables.moduleVersion]
+            notes/RELNOTES-$(build.moduleVersion)
             $(moduleName).xcframework.zip
           TargetFolder: $(Build.ArtifactStagingDirectory)
           flattenFolders: true
@@ -76,7 +73,7 @@ jobs:
     variables:
       moduleVersion: $[ dependencies.Build.outputs['build.moduleVersion'] ]
     steps:
-      - checkout: $(moduleRepoName)
+      - checkout: 'packageRepo'
         fetchTags: true
         persistCredentials: true
       - download: current
@@ -116,7 +113,7 @@ jobs:
     variables:
       moduleVersion: $[ dependencies.Build.outputs['build.moduleVersion'] ]
     steps:
-      - checkout: $(moduleRepoName)
+      - checkout: 'packageRepo'
       - download: current
         artifact: framework
         displayName: 'Get cached XCFramework'
