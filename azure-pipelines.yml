@@ -29,6 +29,11 @@ variables:
 
 resources:
   repositories:
+    - repository: 'moduleRepo'
+      type: github
+      name: 'Cogosense/iOSBoostFramework'
+      endpoint: 'Cogosense'
+      ref: main
     - repository: 'packageRepo'
       type: github
       name: 'Cogosense/Boost-iOS'
@@ -38,9 +43,16 @@ resources:
 jobs:
   - job: Build
     displayName: Build XCFramework
+    uses:
+      repositories:
+        - moduleRepo
     steps:
       - checkout: self
         persistCredentials: true
+      - script: |
+          gh release view 1.89.0
+        env:
+          GH_TOKEN: $(System.AccessToken)
       - script: |
           version=$(make version)
           echo "##vso[task.setvariable variable=moduleVersion;isOutput=true]$version"
@@ -72,6 +84,9 @@ jobs:
     displayName: Publish SPM metadata Package.swift
     variables:
       moduleVersion: $[ dependencies.Build.outputs['build.moduleVersion'] ]
+    uses:
+      repositories:
+        - packageRepo
     steps:
       - checkout: 'packageRepo'
         fetchTags: true
@@ -112,6 +127,9 @@ jobs:
     displayName: Release binary SPM XCFramework
     variables:
       moduleVersion: $[ dependencies.Build.outputs['build.moduleVersion'] ]
+    uses:
+      repositories:
+        - packageRepo
     steps:
       - checkout: 'packageRepo'
       - download: current
