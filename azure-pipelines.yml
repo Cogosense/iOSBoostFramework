@@ -16,16 +16,25 @@ pool:
 # 2. SPM repo - the repo used to ship the binary framework,
 #    that is the one specified in 'moduleRepoName'
 #
+# The group contains the github pat as GH_TOKEN, for the gh tool
+#
 # The githubConnection is the authenticated service connection
 # between Azure and Github
 #
 variables:
-  moduleName: 'boost'
-  moduleRepoName: 'Boost-iOS'
-  githubConnection: 'Cogosense'
-  githubOrg: 'Cogosense'
-  gitUserEmail: 'cogojenkins@cogosense.com'
-  gitUserName: "$(Build.DefinitionName) Azure Pipeline"
+  - group: FleetSaferIOS
+  - name: moduleName
+    value: 'boost'
+  - name: moduleRepoName
+    value: 'Boost-iOS'
+  - name: githubConnection
+    value: 'Cogosense'
+  - name: githubOrg
+    value: 'Cogosense'
+  - name: gitUserEmail
+    value: 'cogojenkins@cogosense.com'
+  - name: gitUserName
+    value: "$(Build.DefinitionName) Azure Pipeline"
 
 resources:
   repositories:
@@ -52,7 +61,7 @@ jobs:
       - script: |
           gh release view 1.89.0
         env:
-          GH_TOKEN: $(System.AccessToken)
+          GH_TOKEN: $(GH_TOKEN)
       - script: |
           version=$(make version)
           echo "##vso[task.setvariable variable=moduleVersion;isOutput=true]$version"
@@ -66,7 +75,7 @@ jobs:
           fi
         name: build
         env:
-          GH_TOKEN: $(System.AccessToken)
+          GH_TOKEN: $(GH_TOKEN)
       - task: CopyFiles@2
         inputs:
           Contents: |
