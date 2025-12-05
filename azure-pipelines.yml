@@ -33,7 +33,7 @@ resources:
       type: github
       name: 'Cogosense/iOSBoostFramework'
       endpoint: 'Cogosense'
-      ref: main
+      ref: master
     - repository: 'packageRepo'
       type: github
       name: 'Cogosense/Boost-iOS'
