@@ -1,5 +1,6 @@
 pool:
-  vmImage: macOS-15
+  name: macOS-15
+#  vmImage: macOS-15
 
 # Build an XCFramework, and optionally
 # release a binary zip file to a second repository
@@ -21,6 +22,8 @@ pool:
 # The githubConnection is the authenticated service connection
 # between Azure and Github
 #
+#
+
 variables:
   - group: FleetSaferIOS
   - name: moduleName
@@ -38,11 +41,6 @@ variables:
 
 resources:
   repositories:
-    - repository: 'moduleRepo'
-      type: github
-      name: 'Cogosense/iOSBoostFramework'
-      endpoint: 'Cogosense'
-      ref: master
     - repository: 'packageRepo'
       type: github
       name: 'Cogosense/Boost-iOS'
@@ -51,17 +49,13 @@ resources:
 
 jobs:
   - job: Build
+    workspace:
+      clean: all
     displayName: Build XCFramework
-    uses:
-      repositories:
-        - moduleRepo
     steps:
       - checkout: self
         persistCredentials: true
-      - script: |
-          gh release view 1.89.0
-        env:
-          GH_TOKEN: $(GH_TOKEN)
+        fetchTags: true
       - script: |
           version=$(make version)
           echo "##vso[task.setvariable variable=moduleVersion;isOutput=true]$version"
@@ -88,18 +82,17 @@ jobs:
         artifact: framework
 
   - job: Publish
+    workspace:
+      clean: all
     dependsOn: Build
     condition: and(succeeded('Build'),not(canceled()))
     displayName: Publish SPM metadata Package.swift
     variables:
       moduleVersion: $[ dependencies.Build.outputs['build.moduleVersion'] ]
-    uses:
-      repositories:
-        - packageRepo
     steps:
       - checkout: 'packageRepo'
-        fetchTags: true
         persistCredentials: true
+        fetchTags: true
       - download: current
         artifact: framework
         displayName: 'Get cached XCFramework'
@@ -131,16 +124,16 @@ jobs:
         displayName: Cleanup workspace
 
   - job: Release
-    dependsOn: Publish
+    dependsOn:
+      - Build
+      - Publish
     condition: and(and(succeeded('Publish'),not(canceled())),eq(dependencies.Publish.outputs['publish.createRelease'], 'true'))
     displayName: Release binary SPM XCFramework
     variables:
       moduleVersion: $[ dependencies.Build.outputs['build.moduleVersion'] ]
-    uses:
-      repositories:
-        - packageRepo
     steps:
       - checkout: 'packageRepo'
+        fetchTags: true
       - download: current
         artifact: framework
         displayName: 'Get cached XCFramework'
