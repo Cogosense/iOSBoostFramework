@@ -40,7 +40,7 @@ BOOST_VERSION = 1_89_0
 #
 # Release version on GitHub - bump last digit to make new
 # GitHub release with same Boost version.
-VERSION =  1.89.0
+VERSION =  1.89.1
 
 #
 # Download location URL
@@ -445,7 +445,7 @@ release : notes/RELNOTES-$(VERSION) $(XCFRAMEWORKBUNDLE).tar.gz $(XCFRAMEWORKBUN
 				--generate-notes \
 				-F notes/RELNOTES-$(VERSION) \
 				$(XCFRAMEWORKBUNDLE).tar.gz $(XCFRAMEWORKBUNDLE).tar.bz2 $(XCFRAMEWORKBUNDLE).zip \
-				$(MAKER_INTERMEDIATE_DIR)/$(IPHONEOS_SDK)/$(FRAMEWORKBUNDLE).zip; \
+				$(MAKER_INTERMEDIATE_DIR)/$(IPHONEOS_SDK)/$(FRAMEWORKBUNDLE).zip ; \
 		else \
 			echo "warning: iOSBoostFramework $(VERSION) has already been created: skipping release" ; \
 		fi ; \
