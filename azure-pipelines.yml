@@ -32,6 +32,8 @@ variables:
     value: 'Boost-iOS'
   - name: githubConnection
     value: 'Cogosense'
+  - name: githubToolConnection
+    value: 'Cogosense_gh_pat'
   - name: githubOrg
     value: 'Cogosense'
   - name: gitUserEmail
@@ -48,55 +50,29 @@ resources:
       ref: main
 
 jobs:
-  - job: Build
-    workspace:
-      clean: all
-    displayName: Build XCFramework
-    steps:
-      - checkout: self
-        persistCredentials: true
-        fetchTags: true
-      - script: |
-          version=$(make version)
-          echo "##vso[task.setvariable variable=moduleVersion;isOutput=true]$version"
-
-          for sdk in macosx iphoneos iphonesimulator ; do
-            make SDK=$sdk
-          done
-          make xcframework
-          if [ -f notes/RELNOTES-$version ] ; then
-            make GITBRANCH=$(Build.SourceBranchName) release
-          fi
-        name: build
-        env:
-          GH_TOKEN: $(GH_TOKEN)
-      - task: CopyFiles@2
-        inputs:
-          Contents: |
-            notes/RELNOTES-$(build.moduleVersion)
-            $(moduleName).xcframework.zip
-          TargetFolder: $(Build.ArtifactStagingDirectory)
-          flattenFolders: true
-      - publish: $(Build.ArtifactStagingDirectory)
-        displayName: 'Cache XCFramework'
-        artifact: framework
-
   - job: Publish
     workspace:
       clean: all
-    dependsOn: Build
-    condition: and(succeeded('Build'),not(canceled()))
     displayName: Publish SPM metadata Package.swift
     variables:
-      moduleVersion: $[ dependencies.Build.outputs['build.moduleVersion'] ]
+      moduleVersion: 1.89.1
     steps:
       - checkout: 'packageRepo'
         persistCredentials: true
         fetchTags: true
-      - download: current
-        artifact: framework
-        displayName: 'Get cached XCFramework'
+      - task: DownloadPipelineArtifact@2
+        displayName: 'Download Artifacts'
+        inputs:
+          buildType: 'specific'
+          project: 'FleetSafer'
+          pipeline: '4'
+          buildVersionToDownload: 'specific'
+          buildId: '53'
+          artifactName: 'framework'
+          targetPath: '$(Pipeline.workspace)/framework'
       - script: |
+          set -x
+          ls -lR $(Pipeline.Workspace)
           CHKSUM=$(swift package compute-checksum $(Pipeline.Workspace)/framework/$(moduleName).xcframework.zip)
           sed -E -i '' '/let moduleName =/s/= ".+"/= "$(moduleName)"/' Package.swift
           sed -E -i '' '/let version =/s/= ".+"/= "$(moduleVersion)"/' Package.swift
@@ -124,31 +100,36 @@ jobs:
         displayName: Cleanup workspace
 
   - job: Release
+    workspace:
+      clean: all
     dependsOn:
-      - Build
       - Publish
     condition: and(and(succeeded('Publish'),not(canceled())),eq(dependencies.Publish.outputs['publish.createRelease'], 'true'))
     displayName: Release binary SPM XCFramework
     variables:
-      moduleVersion: $[ dependencies.Build.outputs['build.moduleVersion'] ]
+      moduleVersion: 1.89.1
     steps:
       - checkout: 'packageRepo'
+        persistCredentials: true
         fetchTags: true
-      - download: current
-        artifact: framework
-        displayName: 'Get cached XCFramework'
-      - task: GitHubRelease@1
+      - task: DownloadPipelineArtifact@2
+        displayName: 'Download Artifacts'
         inputs:
-          gitHubConnection: $(githubConnection)
-          repositoryName: '$(githubOrg)/$(moduleRepoName)'
-          tagSource: 'userSpecifiedTag'
-          tag: $(moduleVersion)
-          changeLogCompareToRelease: 'lastFullRelease'
-          changeLogType: 'commitBased'
-          releaseNotesSource: 'filePath'
-          releaseNotesFilePath: $(Pipeline.Workspace)/framework/RELNOTES-$(moduleVersion)
-          assets: |
+          buildType: 'specific'
+          project: 'FleetSafer'
+          pipeline: '4'
+          buildVersionToDownload: 'specific'
+          buildId: '53'
+          artifactName: 'framework'
+          targetPath: '$(Pipeline.workspace)/framework'
+      - script: |
+          gh release create "$(moduleVersion)" \
+            --verify-tag \
+            --generate-notes \
+            -F $(Pipeline.Workspace)/framework/RELNOTES-$(moduleVersion) \
             $(Pipeline.Workspace)/framework/$(moduleName).xcframework.zip
+        env:
+          GH_TOKEN: $(GH_TOKEN)
       - script: |
           rm -rf $(Pipeline.Workspace)/framework
         displayName: Cleanup workspace

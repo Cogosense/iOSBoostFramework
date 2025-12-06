@@ -96,7 +96,7 @@ To build a universal XCframework:
     make SDK=iphonesimulator
     make xcframework
 
-Or in line line:
+Or in one line:
 
     for sdk in macosx iphoneos iphonesimulator ; do make SDK=$sdk ; done && make xcframework
 
