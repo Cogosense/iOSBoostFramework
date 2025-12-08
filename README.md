@@ -17,9 +17,8 @@ major release.
 
 To add the swift package right click your project in the Xcode project explorer,
 select __Add packages...__.
-* In the search field enter the package URL __https://github.com/Cogosense/iOSBoostFramework__
+* In the search field enter the package URL __https://github.com/Cogosense/Boost-iOS__
 * In the __Dependency Rule__ field set the version to __1.89.0__
-
 ## Platform Support
 
 The Makefile in this project creates a iOS XCframework bundle that
@@ -47,7 +46,7 @@ The following operating systems and processors are supported:
 * iOS Simulator on Intel and Apple processors.
 
 The iOS Simulator for Intel processors is only supported upto Xcode 16.4,
-from Xcode 26.1, there is no platform support for iOS simulators on x86_64.
+from Xcode 26.1, the iOS simulator on x86_64 is not being built.
 
 ## Supported Libraries
 
@@ -108,7 +107,7 @@ is built. This is specified by Xcode using the **ARCHS** build variable.
 ## Support for Swift Package Manager
 
 The new XCframework is distributed as a binary framework.
-See [iOSBoost Framework Swift Package Distribution](https://github.com/Cogosense/iOSBoostBinaryPackage.git)
+See [iOS Boost Framework Swift Package Distribution](https://github.com/Cogosense/Boost-iOS.git)
 
 ## Support for Xcode Workspaces
 

@@ -27,6 +27,9 @@ ifeq ($(V),1)
 	at =
 endif
 
+MACOS_MIN_VERSION = 10.13
+IOS_MIN_VERSION = 11.0
+
 #
 # Repository info
 #
@@ -34,19 +37,21 @@ GITBRANCH ?= $(shell which git > /dev/null && git rev-parse --abbrev-ref --verif
 GITCOMMIT ?= $(shell which git > /dev/null && git rev-parse --verify -q HEAD || echo "unknown")
 
 #
-# library to be built
-NAME = boost
-BOOST_VERSION = 1_89_0
+# library distribution to be built
+DIST_NAME = boost
+DIST_VERSION = 1_89_0
+
 #
 # Release version on GitHub - bump last digit to make new
-# GitHub release with same Boost version.
+# GitHub release with same distribution version.
+NAME = boost
 VERSION =  1.89.1
 
 #
 # Download location URL
 #
-TARBALL = $(NAME)_$(BOOST_VERSION).tar.bz2
-DOWNLOAD_URL = http://sourceforge.net/projects/boost/files/boost/$(subst _,.,$(BOOST_VERSION))/$(TARBALL)
+TARBALL = $(DIST_NAME)_$(DIST_VERSION).tar.bz2
+DOWNLOAD_URL = http://sourceforge.net/projects/boost/files/boost/$(subst _,.,$(DIST_VERSION))/$(TARBALL)
 
 #
 # Files used to trigger builds for each architecture
@@ -69,11 +74,17 @@ IPHONEOS_SDK = iphoneos
 IPHONESIMULATOR_SDK = iphonesimulator
 
 #
-# The supported Boost target-os
+# The supported build target os
 #
 MACOSX_TARGET = darwin
 IPHONEOS_TARGET = iphone
 IPHONESIMULATOR_TARGET = iphone
+
+#
+# The supported build target architecture
+#
+ARM64_TARGET = arm64
+X86_64_TARGET = x86_64
 
 #
 # The supported Xcode build architectures
@@ -101,26 +112,10 @@ WFLAGS = -Wall -pedantic -Wno-unused-variable -Wno-deprecated-declarations
 EXTRA_CFLAGS =
 EXTRA_CXXFLAGS = -stdlib=libc++ -std=c++17
 EXTRA_CPPFLAGS =
+EXTRA_LDFLAGS = -Z -L/usr/lib
+EXTRA_CONFIGURE_ARGS =
 BOOST_LIBS = atomic date_time exception filesystem locale program_options random regex serialization system test thread chrono container
 JAM_PROPERTIES = visibility=global
-
-#
-# set minimum MacOSX version supported
-#
-ifneq "$(IPHONEOS_DEPLOYMENT_TARGET)" ""
-    MIN_OS_VER = $(MACOSX_DEPLOYMENT_TARGET)
-else
-    MIN_OS_VER = 10.0
-endif
-
-#
-# set minimum iOS version supported
-#
-ifneq "$(IPHONEOS_DEPLOYMENT_TARGET)" ""
-    MIN_OS_VER = $(IPHONEOS_DEPLOYMENT_TARGET)
-else
-    MIN_OS_VER = 11.0
-endif
 
 #
 # enable bitcode support
@@ -141,44 +136,57 @@ endif
 # build for device or simulator
 ifneq ($(findstring $(IPHONEOS_SDK), $(SDK_NAME)),)
 	SDK = $(IPHONEOS_SDK)
+else ifneq ($(findstring $(IPHONESIMULATOR_SDK), $(SDK_NAME)),)
+	SDK = $(IPHONESIMULATOR_SDK)
+else ifneq ($(findstring $(MACOSX_SDK), $(SDK_NAME)),)
+	SDK = $(MACOSX_SDK)
+else ifneq ($(SDK_NAME),)
+	SDK = $(SDK_NAME)
 else
-	ifneq ($(findstring $(IPHONESIMULATOR_SDK), $(SDK_NAME)),)
-		SDK = $(IPHONESIMULATOR_SDK)
-	else
-		ifneq ($(findstring $(MACOSX_SDK), $(SDK_NAME)),)
-			SDK = $(MACOSX_SDK)
-		else
-			ifneq ($(SDK_NAME),)
-				SDK = $(SDK_NAME)
-			endif
-		endif
-	endif
+	SDK = $(IPHONEOS_SDK)
 endif
-SDK ?= $(IPHONEOS_SDK)
+
 # build for device or simulator
 ifeq ($(SDK),$(IPHONEOS_SDK))
-	SDK = $(IPHONEOS_SDK)
 	ARCHS ?= $(ARM_64_ARCH)
-else
-	ifeq ($(SDK),$(IPHONESIMULATOR_SDK))
-		SDK = $(IPHONESIMULATOR_SDK)
-		# MacOSX Tahoe removed support for all but one Intel Mac.
-		# Tahoe shipped with SDK26.1, x86_64 simulator can still be built
-		# but is no longer supported (discouraged) by Apple. Older SDK's
-		# will still build it.
-		ifeq ($(shell expr $(IPHONESIMULATOR_SDK_PLATFORM_VERSION) \>= 26),1)
-			ARCHS ?= $(ARM_64_ARCH)
-		else
-			ARCHS ?= $(ARM_64_ARCH) $(X86_64_ARCH)
-		endif
+	#
+	# set minimum iOS version supported
+	#
+	ifneq "$(IPHONEOS_DEPLOYMENT_TARGET)" ""
+    		MIN_OS_VER = $(IPHONEOS_DEPLOYMENT_TARGET)
 	else
-		ifeq ($(SDK),$(MACOSX_SDK))
-			SDK = $(MACOSX_SDK)
-			ARCHS ?= $(ARM_64_ARCH) $(X86_64_ARCH)
-		else
-$(error unsupported sdk: $(SDK))
-		endif
+    		MIN_OS_VER = $(IOS_MIN_VERSION)
 	endif
+else ifeq ($(SDK),$(IPHONESIMULATOR_SDK))
+	# MacOSX Tahoe removed support for all but one Intel Mac.
+	# Tahoe shipped with SDK26.1, x86_64 simulator can still be built
+	# but is no longer supported (discouraged) by Apple. Older SDK's
+	# will still build it.
+	ifeq ($(shell expr $(IPHONESIMULATOR_SDK_PLATFORM_VERSION) \>= 26),1)
+		ARCHS ?= $(ARM_64_ARCH)
+	else
+		ARCHS ?= $(ARM_64_ARCH) $(X86_64_ARCH)
+	endif
+	#
+	# set minimum iOS version supported
+	#
+	ifneq "$(IPHONEOS_DEPLOYMENT_TARGET)" ""
+    		MIN_OS_VER = $(IPHONEOS_DEPLOYMENT_TARGET)
+	else
+    		MIN_OS_VER = $(IOS_MIN_VERSION)
+	endif
+else ifeq ($(SDK),$(MACOSX_SDK))
+	#
+	# set minimum MacOSX version supported
+	#
+	ifneq "$(MACOXS_DEPLOYMENT_TARGET)" ""
+		MIN_OS_VER = $(MACOSX_DEPLOYMENT_TARGET)
+	else
+		MIN_OS_VER = $(MACOS_MIN_VERSION)
+	endif
+	ARCHS ?= $(ARM_64_ARCH) $(X86_64_ARCH)
+else
+	$(error unsupported sdk: $(SDK))
 endif
 
 BUILT_PRODUCTS_DIR ?= $(CURDIR)/build
@@ -190,7 +198,7 @@ MAKER_BUILD_DIR = $(MAKER_DIR)/Build
 MAKER_BUILDROOT_DIR = $(MAKER_DIR)/Buildroot
 MAKER_INTERMEDIATE_DIR = $(MAKER_DIR)/Intermediate
 
-PKGSRCDIR = $(MAKER_SOURCES_DIR)/$(NAME)_$(BOOST_VERSION)
+PKGSRCDIR = $(MAKER_SOURCES_DIR)/$(DIST_NAME)_$(DIST_VERSION)
 
 FRAMEWORKBUNDLE = $(FRAMEWORK_NAME).framework
 XCFRAMEWORKBUNDLE = $(FRAMEWORK_NAME).xcframework
@@ -231,6 +239,7 @@ clean :
 	$(RM) -r $(BUILT_PRODUCTS_DIR)
 	$(RM) -r DerivedData
 	$(RM) -r Carthage
+	$(RM) *.xcframework.tar.gz
 	$(RM) *.xcframework.tar.bz2
 	$(RM) *.xcframework.tar.zip
 	$(RM) Info.plist
@@ -265,8 +274,8 @@ bootstrap : dirs tarball $(PKGSRCDIR)/bootstrap.sh
 
 $(PKGSRCDIR)/bootstrap.sh :
 	tar -C $(MAKER_SOURCES_DIR) -xmf $(MAKER_ARCHIVES_DIR)/$(TARBALL)
-	if [ -d patches/$(BOOST_VERSION) ] ; then \
-	    for p in patches/$(BOOST_VERSION)/* ; do \
+	if [ -d patches/$(DIST_VERSION) ] ; then \
+	    for p in patches/$(DIST_VERSION)/* ; do \
 		if [ -f $$p ] ; then \
 		    patch -d $(PKGSRCDIR) -p1 < $$p ; \
 		fi ; \
@@ -291,8 +300,8 @@ builds : dirs tarball bootstrap jams $(addprefix Build_$(SDK)_, $(ARCHS))
 #
 # $1 - sdk (iphoneos or iphonesimulator)
 # $2 - xcode architecture (arm64, x86_64)
-# $3 - boost target (darwin, iphone)
-# $4 - boost toolchain architecture (arm64, x86_64)
+# $3 - target toolchain os name
+# $4 - target toolchain architecture name
 #
 define configure_template
 
@@ -306,7 +315,7 @@ $(MAKER_BUILD_DIR)/$(1)/$(2)/user-config.jam :
 	@echo "    : xcrun --sdk $(1) clang++" >> $$@
 	@echo "    : <cxxflags>\"-m$(1)-version-min=$$(MIN_OS_VER) $$(XCODE_BITCODE_FLAG) -arch $(2) $$(EXTRA_CXXFLAGS) $$(EXTRA_CPPFLAGS) $$(JAM_DEFINES) $$(WFLAGS)\"" >> $$@
 	@echo "      <cflags>\"-m$(1)-version-min=$$(MIN_OS_VER) $$(XCODE_BITCODE_FLAG) -arch $(2) $$(EXTRA_CFLAGS) $$(EXTRA_CPPFLAGS) $$(JAM_DEFINES) $$(WFLAGS)\"" >> $$@
-	@echo "      <linkflags>\"-arch $(2) -liconv\"" >> $$@
+	@echo "      <linkflags>\"-arch $(2) $$(EXTRA_LDFLAGS) -liconv\"" >> $$@
 	@echo "      <striper>" >> $$@
 	@echo "    ;" >> $$@
 
@@ -345,11 +354,11 @@ $(MAKER_BUILDROOT_DIR)/$(1)/$(2)/$(FRAMEWORKBUNDLE)$(INSTALLED_LIB) :
 
 endef
 
-$(eval $(call configure_template,$(MACOSX_SDK),$(ARM_64_ARCH),$(MACOSX_TARGET),arm64))
-$(eval $(call configure_template,$(MACOSX_SDK),$(X86_64_ARCH),$(MACOSX_TARGET),x86_64))
-$(eval $(call configure_template,$(IPHONEOS_SDK),$(ARM_64_ARCH),$(IPHONEOS_TARGET),arm64))
-$(eval $(call configure_template,$(IPHONESIMULATOR_SDK),$(ARM_64_ARCH),$(IPHONESIMULATOR_TARGET),arm64))
-$(eval $(call configure_template,$(IPHONESIMULATOR_SDK),$(X86_64_ARCH),$(IPHONESIMULATOR_TARGET),x86_64))
+$(eval $(call configure_template,$(MACOSX_SDK),$(ARM_64_ARCH),$(MACOSX_TARGET),$(ARM64_TARGET)))
+$(eval $(call configure_template,$(MACOSX_SDK),$(X86_64_ARCH),$(MACOSX_TARGET),$(X86_64_TARGET)))
+$(eval $(call configure_template,$(IPHONEOS_SDK),$(ARM_64_ARCH),$(IPHONEOS_TARGET),$(ARM64_TARGET)))
+$(eval $(call configure_template,$(IPHONESIMULATOR_SDK),$(ARM_64_ARCH),$(IPHONESIMULATOR_TARGET),$(ARM64_TARGET)))
+$(eval $(call configure_template,$(IPHONESIMULATOR_SDK),$(X86_64_ARCH),$(IPHONESIMULATOR_TARGET),$(X86_64_TARGET)))
 
 FIRST_ARCH = $(firstword $(ARCHS))
 
@@ -408,7 +417,7 @@ $(SDK_DIR)/$(FRAMEWORKBUNDLE).zip : $(SDK_DIR)/$(FRAMEWORKBUNDLE)
 	@echo "$(FRAMEWORKBUNDLE) for $(SDK) saved to archive $@"
 
 .PHONY : xcframework
-xcframework : $(BUILT_PRODUCTS_DIR)/$(XCFRAMEWORKBUNDLE) $(XCFRAMEWORKBUNDLE).tar.bz2 $(XCFRAMEWORKBUNDLE).zip
+xcframework : $(BUILT_PRODUCTS_DIR)/$(XCFRAMEWORKBUNDLE) $(XCFRAMEWORKBUNDLE).tar.gz  $(XCFRAMEWORKBUNDLE).tar.bz2 $(XCFRAMEWORKBUNDLE).zip
 
 $(BUILT_PRODUCTS_DIR)/$(XCFRAMEWORKBUNDLE) : $(wildcard $(MAKER_INTERMEDIATE_DIR)/*/$(FRAMEWORKBUNDLE))
 	$(at)$(RM) -r $@
@@ -429,7 +438,7 @@ $(XCFRAMEWORKBUNDLE).zip : $(BUILT_PRODUCTS_DIR)/$(XCFRAMEWORKBUNDLE)
 	$(at)(cd $(BUILT_PRODUCTS_DIR) && zip -qr ../$(XCFRAMEWORKBUNDLE).zip $(XCFRAMEWORKBUNDLE)) || exit $?
 	@echo "$(XCFRAMEWORKBUNDLE) saved to archive $@"
 
-.PHONY : release update-spm
+.PHONY : release
 
 version :
 	@echo $(VERSION)
@@ -438,7 +447,7 @@ release : notes/RELNOTES-$(VERSION) $(XCFRAMEWORKBUNDLE).tar.gz $(XCFRAMEWORKBUN
 	$(at)if [ $(GITBRANCH) == 'master' ] ; then \
 		if ! gh release view $(VERSION)  > /dev/null 2>&1 ; then \
 			echo "creating release $(VERSION)" ; \
-			git tag -am "Release Boost for iOS $(VERSION)" $(VERSION) ; \
+			git tag -am "Release $(NAME) for iOS/MacOS $(VERSION)" $(VERSION) ; \
 			git push origin HEAD:master --follow-tags ; \
 			gh release create "$(VERSION)" \
 				--verify-tag \
@@ -447,6 +456,6 @@ release : notes/RELNOTES-$(VERSION) $(XCFRAMEWORKBUNDLE).tar.gz $(XCFRAMEWORKBUN
 				$(XCFRAMEWORKBUNDLE).tar.gz $(XCFRAMEWORKBUNDLE).tar.bz2 $(XCFRAMEWORKBUNDLE).zip \
 				$(MAKER_INTERMEDIATE_DIR)/$(IPHONEOS_SDK)/$(FRAMEWORKBUNDLE).zip ; \
 		else \
-			echo "warning: iOSBoostFramework $(VERSION) has already been created: skipping release" ; \
+			echo "warning: $(NAME) $(VERSION) has already been created: skipping release" ; \
 		fi ; \
 	fi
