@@ -45,7 +45,7 @@ DIST_VERSION = 1_89_0
 # Release version on GitHub - bump last digit to make new
 # GitHub release with same distribution version.
 NAME = boost
-VERSION =  1.89.1
+VERSION =  1.89.2
 
 #
 # Download location URL
@@ -327,7 +327,7 @@ $(MAKER_BUILDROOT_DIR)/$(1)/$(2)/$(FRAMEWORKBUNDLE)$(INSTALLED_LIB) :
 	cd $(PKGSRCDIR) && \
 	PATH=usr/local/bin:/usr/bin:/bin \
 	BOOST_BUILD_USER_CONFIG=$(MAKER_BUILD_DIR)/$(1)/$(2)/user-config.jam \
-	./b2 --build-dir="$$$$builddir" --prefix="$$$$installdir" $$(JAM_OPTIONS) toolset=clang-darwin-$(4) target-os=$(3) warnings=off link=static $$(JAM_PROPERTIES) install && \
+	./b2 --build-dir="$$$$builddir" --prefix="$$$$installdir" $$(JAM_OPTIONS) toolset=clang-darwin-$(4) target-os=$(3) warnings=off link=static debug-symbols=on $$(JAM_PROPERTIES) install && \
 	cd $$$$installdir/lib && printf "[$(1)-$(2)] extracting... " && \
 	for ar in `find . -name "*.a"` ; do \
 		boostlib=`basename $$$$ar` ; \
