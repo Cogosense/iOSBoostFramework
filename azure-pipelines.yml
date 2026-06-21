@@ -96,7 +96,10 @@ jobs:
     workspace:
       clean: all
     dependsOn: Build
-    condition: and(succeeded('Build'),not(canceled()))
+    # Publish (and Release) only from master — feature/* and PR builds validate
+    # the xcframework in Build but must never push Package.swift / tag / release
+    # to the Boost-iOS repo.
+    condition: and(succeeded('Build'),not(canceled()),eq(variables['Build.SourceBranch'], 'refs/heads/master'))
     displayName: Publish SPM metadata Package.swift
     variables:
       moduleVersion: $[ dependencies.Build.outputs['build.moduleVersion'] ]
@@ -140,7 +143,7 @@ jobs:
     dependsOn:
       - Build
       - Publish
-    condition: and(and(succeeded('Publish'),not(canceled())),eq(dependencies.Publish.outputs['publish.createRelease'], 'true'))
+    condition: and(and(succeeded('Publish'),not(canceled())),and(eq(dependencies.Publish.outputs['publish.createRelease'], 'true'),eq(variables['Build.SourceBranch'], 'refs/heads/master')))
     displayName: Release binary SPM XCFramework
     variables:
       moduleVersion: $[ dependencies.Build.outputs['build.moduleVersion'] ]
