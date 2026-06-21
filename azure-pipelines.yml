@@ -57,6 +57,8 @@ jobs:
         persistCredentials: true
         fetchTags: true
       - script: |
+          set -euo pipefail
+
           version=$(make version)
           echo "##vso[task.setvariable variable=moduleVersion;isOutput=true]$version"
 
@@ -64,6 +66,15 @@ jobs:
             make SDK=$sdk
           done
           make xcframework
+
+          # Fail loud if the build produced no artifact. A stripped/empty build
+          # (e.g. an unlicensed Xcode on the agent — `sudo xcodebuild -license
+          # accept`) otherwise reports success and cuts an empty release.
+          if [ ! -f "$(moduleName).xcframework.zip" ] ; then
+            echo "##vso[task.logissue type=error]$(moduleName).xcframework.zip was not produced - build did not run (check Xcode license / toolchain on the agent)"
+            exit 1
+          fi
+
           if [ -f notes/RELNOTES-$version ] ; then
             make GITBRANCH=$(Build.SourceBranchName) release
           fi
