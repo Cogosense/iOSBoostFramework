@@ -1,0 +1,28 @@
+Build Boost with debug symbols (full stack traces)
+
+The static libraries are now compiled with debug symbols retained
+(b2 `debug-symbols=on`), so consumers get full, symbolicated stack
+traces (file/line, not just function names) and a non-empty dSYM when
+archiving an app that links boost.
+
+Previously the release build stripped DWARF, leaving only the symbol
+table — backtraces through boost showed addresses/names but no source
+locations, and the app archive produced an empty dSYM for the boost
+slice.
+
+This supports the following platforms:
+
+* iphoneos/arm64
+* iphonesimulator/arm64
+* iphonesimulator/x86_64
+* macosx/arm64
+* macosx/x86_64
+
+## Fixed issues
+
+* Compile with `debug-symbols=on` so DWARF is retained in the static
+  archive members (FleetSafer AB#25).
+
+## Deprecations:
+
+The x86_64 iphonesimulator architecture is not built on MacOSX Tahoe (Xcode26+)
