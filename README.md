@@ -70,7 +70,7 @@ The following boost libraries are built
 * test
 * thread
 * atomic
-* signals
+* chrono
 * filesystem
 * regex
 * program_options
