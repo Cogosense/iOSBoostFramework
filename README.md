@@ -6,19 +6,34 @@ More information on the [Boost home page](http://www.boost.org/)
 
 ## Distribution
 
-The frameworks are distributed using the following methods:
+The framework is distributed as a pre-built binary **XCFramework** through three
+methods, all of which remain supported:
 
-* As a binary XCFramework using Swift Package Manager
-* As a binary XCFramework using carthage
-* The iOSBoostFramework project can be included into an Xcode workspace
+* As a binary XCFramework via Swift Package Manager — see
+  [Boost-iOS](https://github.com/Cogosense/Boost-iOS)
+* As a binary XCFramework via Carthage
+* By embedding the `iOSBoostFramework.xcodeproj` project into an Xcode workspace
 
-SPM is now the preferred method. Other methods will be deprecated in the next
-major release.
+Carthage and the Xcode-workspace project are the primary integration paths; the
+binary Swift Package is published for projects that prefer SPM. See the
+per-method sections below for usage.
 
-To add the swift package right click your project in the Xcode project explorer,
-select __Add packages...__.
-* In the search field enter the package URL __https://github.com/Cogosense/Boost-iOS__
-* In the __Dependency Rule__ field set the version to __1.89.0__
+### No source Swift Package
+
+We will **not** add a *source* Swift Package product. Boost is large and slow to
+compile, and SwiftPM offers no usable control over the per-library build flags,
+locale/iconv configuration, bitcode mode, and multi-SDK XCFramework assembly that
+this project's Makefile performs. Building Boost from source stays in this
+Makefile, not in a consumer's SwiftPM graph — SPM consumers integrate the
+**binary** XCFramework instead.
+
+### Authenticity
+
+The binary Swift Package is a SwiftPM `.binaryTarget` pinned by a SHA-256
+**checksum** in the [Boost-iOS](https://github.com/Cogosense/Boost-iOS)
+`Package.swift`. That checksum is the proof of authenticity: SwiftPM verifies the
+downloaded XCFramework archive against it and rejects the artifact on any
+mismatch, so a tampered or substituted binary cannot be used.
 ## Platform Support
 
 The Makefile in this project creates a iOS XCframework bundle that
@@ -106,8 +121,17 @@ is built. This is specified by Xcode using the **ARCHS** build variable.
 
 ## Support for Swift Package Manager
 
-The new XCframework is distributed as a binary framework.
-See [iOS Boost Framework Swift Package Distribution](https://github.com/Cogosense/Boost-iOS.git)
+The XCFramework is distributed as a **binary** Swift Package — there is no source
+SPM product (see [No source Swift Package](#no-source-swift-package) above). It is
+published from
+[iOS Boost Framework Swift Package Distribution](https://github.com/Cogosense/Boost-iOS.git),
+whose `Package.swift` declares a `.binaryTarget` pinned by SHA-256 checksum (the
+authenticity guarantee).
+
+To add the package, right-click your project in the Xcode project explorer and
+select __Add packages...__:
+* In the search field enter the package URL __https://github.com/Cogosense/Boost-iOS__
+* In the __Dependency Rule__ field set the version to __1.89.0__
 
 ## Support for Xcode Workspaces
 
