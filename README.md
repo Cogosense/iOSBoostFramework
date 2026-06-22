@@ -89,9 +89,15 @@ The following **compiled** libraries are built and linkable:
 * random
 * locale
 * container
+* json
+* iostreams
 
 The locale library has the POSIX option turned on and the libiconv library
 supplied with iOS is used.
+
+Boost.Iostreams builds its core; the gzip/zlib filter uses the system zlib
+present on Apple platforms. The bzip2, LZMA and Zstd filters depend on libraries
+not shipped in the SDK and are omitted.
 
 To make an additional **compiled** library linkable, add it to the `BOOST_LIBS`
 variable in the Makefile and rebuild. Header-only libraries need no change — they

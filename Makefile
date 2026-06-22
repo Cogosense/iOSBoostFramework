@@ -114,7 +114,7 @@ EXTRA_CXXFLAGS = -stdlib=libc++ -std=c++17
 EXTRA_CPPFLAGS =
 EXTRA_LDFLAGS = -Z -L/usr/lib
 EXTRA_CONFIGURE_ARGS =
-BOOST_LIBS = atomic date_time exception filesystem locale program_options random regex serialization system test thread chrono container
+BOOST_LIBS = atomic date_time exception filesystem locale program_options random regex serialization system test thread chrono container json iostreams
 JAM_PROPERTIES = visibility=global
 
 #
