@@ -65,7 +65,15 @@ from Xcode 26.1, the iOS simulator on x86_64 is not being built.
 
 ## Supported Libraries
 
-The following boost libraries are built
+Boost is a header library plus a set of separately-**compiled** libraries. This
+framework bundles the **complete Boost header tree**, so *every header-only Boost
+library is available out of the box* — no build change required. That includes
+**Signals2** (the modern, thread-aware replacement for Boost.Signals, which was
+removed from Boost upstream in 1.69), along with Asio, Optional, Variant, the
+smart pointers, Algorithm, Tokenizer, MSM, Range, and the rest. Just
+`#include <boost/signals2.hpp>` (etc.) and link against the framework as usual.
+
+The following **compiled** libraries are built and linkable:
 
 * test
 * thread
@@ -84,6 +92,10 @@ The following boost libraries are built
 
 The locale library has the POSIX option turned on and the libiconv library
 supplied with iOS is used.
+
+To make an additional **compiled** library linkable, add it to the `BOOST_LIBS`
+variable in the Makefile and rebuild. Header-only libraries need no change — they
+already ship with the bundled headers.
 
 ## Bitcode
 
