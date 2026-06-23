@@ -45,7 +45,7 @@ DIST_VERSION = 1_89_0
 # Release version on GitHub - bump last digit to make new
 # GitHub release with same distribution version.
 NAME = boost
-VERSION =  1.89.1
+VERSION =  1.89.3
 
 #
 # Download location URL

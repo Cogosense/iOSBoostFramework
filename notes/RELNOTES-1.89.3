@@ -1,0 +1,21 @@
+Boost v1.89.0
+
+This framework was built with Xcode26.3.
+
+This supports the following platforms:
+
+* iphoneos/arm64
+* iphonesimulator/arm64
+* macosx/arm64
+* macosx/x86_64
+
+## Fixed issues
+
+* Added debug information so App DSYM bundles are correctly created to debug stack traces
+* Added the json and iostreams libraries.
+
+## Deprecations:
+
+The x86_64 iphonesimulator architecture is still supported by iOSBoostFramework
+but not built by default on Xcode26+ so is not included in this Boost-iOS
+release.
