@@ -57,6 +57,8 @@ jobs:
         persistCredentials: true
         fetchTags: true
       - script: |
+          set -euo pipefail
+
           version=$(make version)
           echo "##vso[task.setvariable variable=moduleVersion;isOutput=true]$version"
 
@@ -64,6 +66,15 @@ jobs:
             make SDK=$sdk
           done
           make xcframework
+
+          # Fail loud if the build produced no artifact. A stripped/empty build
+          # (e.g. an unlicensed Xcode on the agent — `sudo xcodebuild -license
+          # accept`) otherwise reports success and cuts an empty release.
+          if [ ! -f "$(moduleName).xcframework.zip" ] ; then
+            echo "##vso[task.logissue type=error]$(moduleName).xcframework.zip was not produced - build did not run (check Xcode license / toolchain on the agent)"
+            exit 1
+          fi
+
           if [ -f notes/RELNOTES-$version ] ; then
             make GITBRANCH=$(Build.SourceBranchName) release
           fi
@@ -85,7 +96,10 @@ jobs:
     workspace:
       clean: all
     dependsOn: Build
-    condition: and(succeeded('Build'),not(canceled()))
+    # Publish (and Release) only from master — feature/* and PR builds validate
+    # the xcframework in Build but must never push Package.swift / tag / release
+    # to the Boost-iOS repo.
+    condition: and(succeeded('Build'),not(canceled()),eq(variables['Build.SourceBranch'], 'refs/heads/master'))
     displayName: Publish SPM metadata Package.swift
     variables:
       moduleVersion: $[ dependencies.Build.outputs['build.moduleVersion'] ]
@@ -129,7 +143,7 @@ jobs:
     dependsOn:
       - Build
       - Publish
-    condition: and(and(succeeded('Publish'),not(canceled())),eq(dependencies.Publish.outputs['publish.createRelease'], 'true'))
+    condition: and(and(succeeded('Publish'),not(canceled())),and(eq(dependencies.Publish.outputs['publish.createRelease'], 'true'),eq(variables['Build.SourceBranch'], 'refs/heads/master')))
     displayName: Release binary SPM XCFramework
     variables:
       moduleVersion: $[ dependencies.Build.outputs['build.moduleVersion'] ]

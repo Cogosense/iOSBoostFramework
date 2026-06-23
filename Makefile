@@ -114,7 +114,7 @@ EXTRA_CXXFLAGS = -stdlib=libc++ -std=c++17
 EXTRA_CPPFLAGS =
 EXTRA_LDFLAGS = -Z -L/usr/lib
 EXTRA_CONFIGURE_ARGS =
-BOOST_LIBS = atomic date_time exception filesystem locale program_options random regex serialization system test thread chrono container
+BOOST_LIBS = atomic date_time exception filesystem locale program_options random regex serialization system test thread chrono container json iostreams
 JAM_PROPERTIES = visibility=global
 
 #
@@ -327,7 +327,7 @@ $(MAKER_BUILDROOT_DIR)/$(1)/$(2)/$(FRAMEWORKBUNDLE)$(INSTALLED_LIB) :
 	cd $(PKGSRCDIR) && \
 	PATH=usr/local/bin:/usr/bin:/bin \
 	BOOST_BUILD_USER_CONFIG=$(MAKER_BUILD_DIR)/$(1)/$(2)/user-config.jam \
-	./b2 --build-dir="$$$$builddir" --prefix="$$$$installdir" $$(JAM_OPTIONS) toolset=clang-darwin-$(4) target-os=$(3) warnings=off link=static $$(JAM_PROPERTIES) install && \
+	./b2 --build-dir="$$$$builddir" --prefix="$$$$installdir" $$(JAM_OPTIONS) toolset=clang-darwin-$(4) target-os=$(3) warnings=off link=static debug-symbols=on $$(JAM_PROPERTIES) install && \
 	cd $$$$installdir/lib && printf "[$(1)-$(2)] extracting... " && \
 	for ar in `find . -name "*.a"` ; do \
 		boostlib=`basename $$$$ar` ; \
