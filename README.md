@@ -34,6 +34,21 @@ The binary Swift Package is a SwiftPM `.binaryTarget` pinned by a SHA-256
 `Package.swift`. That checksum is the proof of authenticity: SwiftPM verifies the
 downloaded XCFramework archive against it and rejects the artifact on any
 mismatch, so a tampered or substituted binary cannot be used.
+
+## Creating a New Boost-iOS SPM Binary Release
+
+1. Create a release branch
+
+   git checkout release/x.y.z
+
+2. Set the **VERSION** variable in the _Makefile_ to the new release version string (x.y.z).
+3. Create a release notes file in the notes directory with name **RELNOTES-x.y.z** (The release will not happen if this file is missing).
+5. Add, commit and push the updated _Makefile_ and the _notes/RELNOTES-x.y.z_
+6. Create a PR request to merge to master
+
+The pipeline build will run automatically when the PR is approved, creating the
+new release in the _Cogosense/Boost-iOS_ GitHub repo.
+
 ## Platform Support
 
 The Makefile in this project creates a iOS XCframework bundle that
